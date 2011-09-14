@@ -19,6 +19,8 @@
     IBOutlet EventsTableViewController *eventsTableViewController;
     IBOutlet UIButton *settingsButton;
     IBOutlet SettingsViewController *settingsViewController;
+    IBOutlet UIActivityIndicatorView *activityView;
+ 	IBOutlet UILabel *activityLabel;
     
 }
 @property (nonatomic, retain) UIButton *allButton;
@@ -28,6 +30,8 @@
 @property (nonatomic, retain) UIButton *fbLoginButton;
 @property (nonatomic, retain) UIButton *settingsButton;
 @property (nonatomic, retain) SettingsViewController *settingsViewController;
+@property (nonatomic, retain) IBOutlet UIActivityIndicatorView *activityView;
+@property (nonatomic, retain) IBOutlet UILabel *activityLabel;
 
 -(void) setLoggedIn:(bool)sessionValid;
 - (void)fbDidLogin;

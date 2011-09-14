@@ -11,6 +11,7 @@
 #import "JSON.h"
 #import "OAuthConsumer.h"
 #import "Reachability.h"
+#import "StartViewController.h"
 
 @implementation UKEprogramAppDelegate
 
@@ -33,6 +34,7 @@
 @synthesize myEvents;
 
 @synthesize persistentStoreCoordinator=__persistentStoreCoordinator;
+NSURLConnection *nsuc;
 
 NSNumber *flippedEventId;
 
@@ -77,8 +79,9 @@ NSNumber *flippedEventId;
     eventResponseData = [[NSMutableData data] retain];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL: [NSURL URLWithString:eventsApiUrl]];
     [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
-    NSLog(@"Opening connection");
-    [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    //NSLog(@"Opening connection");
+    
+    nsuc = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 }
 
 - (void)fillEvents {
@@ -132,12 +135,13 @@ NSNumber *flippedEventId;
         e.thumbnail = [event objectForKey:@"thumbnail"];
         e.ageLimit = [numberFormat numberFromString:[[event objectForKey:@"ageLimit"] stringValue]];
         if (![con save:&error]) {
-            NSLog(@"Lagring av %@ feilet", e.title);
+            //NSLog(@"Lagring av %@ feilet", e.title);
         } else {
-            NSLog(@"Lagret event %@", e.title);
+            //NSLog(@"Lagret event %@", e.title);
         }
     }
     [numberFormat release];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"stopActivityIndication" object:nil];
 }
 - (void) getMyEvents
 {
@@ -160,16 +164,16 @@ NSNumber *flippedEventId;
 {
     UIColor *color;
     if ([category isEqualToString:@"konsert"]) {
-        color = [UIColor purpleColor];
+        //color = [UIColor purpleColor];
         color = [UIColor colorWithRed:0.686 green:0.576 blue:0.776 alpha:1.0];
     } else if ([category isEqualToString:@"revy-og-teater"]) {
-        color = [UIColor orangeColor];
+        //color = [UIColor orangeColor];
         color = [UIColor colorWithRed:0.976 green:0.717 blue:0.545 alpha:1.0];
     } else if ([category isEqualToString:@"andelig-fode"]) {
-        color = [UIColor cyanColor];
+        //color = [UIColor cyanColor];
         color = [UIColor colorWithRed:0.5 green:0.854 blue:0.898 alpha:1.0];
     } else if ([category isEqualToString:@"fest-og-moro"]) {
-        color = [UIColor magentaColor];
+        //color = [UIColor magentaColor];
         color = [UIColor colorWithRed:0.92 green:0.698 blue:0.827 alpha:1.0];
     } else {
         color = [UIColor lightGrayColor];
@@ -247,6 +251,7 @@ NSNumber *flippedEventId;
             [alert release];
             [melding release];
         } else {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"startActivityIndication" object:nil];
             [self getAllEvents];
         }
   //  }
@@ -259,7 +264,7 @@ NSNumber *flippedEventId;
     [self.window addSubview:rootController.view];
     dateFormat = [[NSDateFormatter alloc] init];
     [dateFormat setDateFormat:@"yyyy-MM-dd HH:mm"];
-    [self checkReachability];
+    //[self checkReachability];
     // Override point for customization after application launch.
     [self.window makeKeyAndVisible];
     
@@ -385,6 +390,7 @@ NSNumber *flippedEventId;
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
+    [self checkReachability];
     /*
      Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
      */
@@ -407,6 +413,7 @@ NSNumber *flippedEventId;
     [__managedObjectContext release];
     [__managedObjectModel release];
     [__persistentStoreCoordinator release];
+    [nsuc release];
     // Saves changes in the application's managed object context before the application terminates.
     [self saveContext];
 }

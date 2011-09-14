@@ -17,15 +17,17 @@
     EventDetailsViewController *eventDetailsViewController;
     
     FilterViewController *filterViewController;
+    UIBarButtonItem *categoryChooser;
 }
 @property (nonatomic, retain) UIScrollView *pickerView;
 @property (nonatomic, retain) NSMutableArray *listOfEvents;
 @property (nonatomic, retain) EventDetailsViewController *eventDetailsViewController;
 @property (nonatomic, retain) FilterViewController *filterViewController;
 @property (nonatomic, retain) UITableView *eventsTableView;
+@property (nonatomic, retain) UIBarButtonItem *categoryChooser;
 
 -(void) showAllEvents;
--(void) showFavoriteEvents;
+-(void) showFavoriteEventsFromFilterView:(BOOL) value;
 -(void) showKonsertEvents;
 -(void) showRevyEvents;
 -(void) showKursEvents;

@@ -53,38 +53,38 @@
 - (void) alleClicked:(id)sender
 {
     [self.eventsTableViewController showAllEvents];
-    [[self retain] autorelease];
-    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissModalViewControllerAnimated:YES];
+    //[self.navigationController popViewControllerAnimated:YES];
 }
 - (void) konsertClicked:(id)sender
 {
     [self.eventsTableViewController showKonsertEvents];
-    [[self retain] autorelease];
-    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissModalViewControllerAnimated:YES];
+    //[self.navigationController popViewControllerAnimated:YES];
 }
 - (void) revyClicked:(id)sender
 {
     [self.eventsTableViewController showRevyEvents];
-    [[self retain] autorelease];
-    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissModalViewControllerAnimated:YES];
+    //[self.navigationController popViewControllerAnimated:YES];
 }
 - (void) kursClicked:(id)sender
 {
     [self.eventsTableViewController showKursEvents];
-    [[self retain] autorelease];
-    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissModalViewControllerAnimated:YES];   
+    //[self.navigationController popViewControllerAnimated:YES];
 }
 - (void) festClicked:(id)sender
 {
     [self.eventsTableViewController showFestEvents];
-    [[self retain] autorelease];
-    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissModalViewControllerAnimated:YES];
+    //[self.navigationController popViewControllerAnimated:YES];
 }
 - (void) favorittClicked:(id)sender
 {
-    [self.eventsTableViewController showFavoriteEvents];
-    [[self retain] autorelease];
-    [self.navigationController popViewControllerAnimated:YES];
+    [self.eventsTableViewController showFavoriteEventsFromFilterView:YES];
+    [self dismissModalViewControllerAnimated:YES];
+    //[self.navigationController popViewControllerAnimated:YES];
 }
 
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
@@ -103,6 +103,13 @@
 - (void)viewDidUnload
 {
     [super viewDidUnload];
+    [alleButton release];
+    [konsertButton release];
+ 	[revyButton release];
+ 	[kursButton release];
+ 	[festButton release];
+    [favorittButton release];
+ 	[eventsTableViewController release];
     // Release any retained subviews of the main view.
     // e.g. self.myOutlet = nil;
 }

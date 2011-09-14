@@ -12,6 +12,7 @@
 #import "Facebook.h"
 #import "SettingsViewController.h"
 #import "EventDetailsViewController.h"
+#import "Reachability.h"
 
 
 @implementation StartViewController
@@ -23,6 +24,8 @@
 @synthesize settingsViewController;
 @synthesize fbLoginButton;
 @synthesize settingsButton;
+@synthesize activityView;
+@synthesize activityLabel;
 //UIImageView *titleImage;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -36,6 +39,7 @@
 
 - (void)dealloc
 {
+    [self.eventsTableViewController release];
     [super dealloc];
 }
 
@@ -73,6 +77,30 @@
     [delegate.facebook logout:self];
 }
 
+-(void)stopActivityIndication:(NSNotification *)notification
+	
+{
+ 	
+       [activityView stopAnimating];
+ 	
+       [activityView setHidden:YES];
+ 	
+        [activityLabel setHidden:YES];
+ 		
+}
+
+-(void)startActivityIndication:(NSNotification *)notification
+	
+{
+ 		
+       [activityView startAnimating];
+    
+       [activityView setHidden:NO];
+ 		
+       [activityLabel setHidden:NO];
+ 		
+}
+
 #pragma mark - View lifecycle
 
 /*
@@ -100,27 +128,27 @@
 
 -(void)allEventsClicked:(id)sender {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
+    //self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
     [delegate.rootController pushViewController:eventsTableViewController animated:YES];
     [eventsTableViewController showAllEvents];
     NSDate *now = [[NSDate alloc] init];
     [eventsTableViewController scrollToDate:now animated:YES];
-    [now dealloc];
+    [now release];
 }
 -(void)favoriteEventsClicked:(id)sender {
-    self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
+    //self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [delegate.rootController pushViewController:eventsTableViewController animated:YES];
-    [eventsTableViewController showFavoriteEvents];
+    [eventsTableViewController showFavoriteEventsFromFilterView:NO];
     NSDate *now = [[NSDate alloc] init];
     [eventsTableViewController scrollToDate:now animated:YES];
-    [now dealloc];
+    [now release];
 }
 
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
 - (void)viewDidLoad
 {
-    NSLog(@"Loading startupView");
+    //NSLog(@"Loading startupView");
     [super viewDidLoad];
     [allButton addTarget:self action:@selector(allEventsClicked:) forControlEvents:(UIControlEvents)UIControlEventTouchDown];
     [favoritesButton addTarget:self action:@selector(favoriteEventsClicked:) forControlEvents:(UIControlEvents)UIControlEventTouchDown];
@@ -130,6 +158,10 @@
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [self setLoggedIn: [delegate.facebook isSessionValid]];
     [settingsButton addTarget:self action:@selector(settingsClicked:) forControlEvents:UIControlEventTouchDown];
+    [activityView startAnimating];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(stopActivityIndication:) name:@"stopActivityIndication" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startActivityIndication:) name:@"startActivityIndication" object:nil];
+    self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
 }
 
 
@@ -158,6 +190,13 @@
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
+    Reachability *r = [Reachability reachabilityForInternetConnection];
+    NetworkStatus internetStatus = [r currentReachabilityStatus];
+    if(internetStatus == NotReachable) {
+        [self stopActivityIndication:nil];
+        	
+    }
+    
 }
 
 - (void)viewWillDisappear:(BOOL)animated
