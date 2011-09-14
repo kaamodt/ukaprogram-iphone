@@ -17,11 +17,11 @@
 #import "StartViewController.h"
 
 /*IBOutlet UILabel *PlaceLabel;
-IBOutlet UILabel *DateLabel;
-IBOutlet UILabel *leadLabel;
-IBOutlet UILabel *textLabel;
-IBOutlet UIImage *eventImg;
-*/
+ IBOutlet UILabel *DateLabel;
+ IBOutlet UILabel *leadLabel;
+ IBOutlet UILabel *textLabel;
+ IBOutlet UIImage *eventImg;
+ */
 @implementation EventDetailsViewController
 @synthesize headerLabel;
 @synthesize leadLabel;
@@ -60,11 +60,11 @@ IBOutlet UIImage *eventImg;
 #pragma mark - View lifecycle
 
 /*
-// Implement loadView to create a view hierarchy programmatically, without using a nib.
-- (void)loadView
-{
-}
-*/
+ // Implement loadView to create a view hierarchy programmatically, without using a nib.
+ - (void)loadView
+ {
+ }
+ */
 - (void)attendDidChange
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
@@ -92,24 +92,30 @@ IBOutlet UIImage *eventImg;
 - (void)setLoginButtons
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    if (![delegate isLoggedIn]) {
-        [friendsButton setFrame:CGRectMake(8, 220, 250, 37)];
-        [friendsButton setTitle:@"Logg inn for å se deltakende venner" forState:UIControlStateNormal];
-        [friendsButton addTarget:self action:@selector(fbLoginClicked:) forControlEvents:UIControlEventTouchUpInside];
-        [attendingButton setHidden:YES];
-    } else {
-        [friendsButton setFrame:CGRectMake(8, 220, 167, 37)];
-        [friendsButton setHidden:NO];
-        if (friendsTableViewController.listOfFriends == nil) {//prevent loading when friends are already loaded
-            [friendsTableViewController loadFriends:self];
-        }
-        [friendsButton addTarget:self action:@selector(pushFriendsView:) forControlEvents:UIControlEventTouchUpInside];
+    [friendsButton setHidden:YES];
+    [attendingButton setHidden:YES];
+    if ([delegate isReachable]) {
         if (![delegate isLoggedIn]) {
+            
+            [friendsButton setFrame:CGRectMake(8, 220, 250, 37)];
+            [friendsButton setTitle:@"Logg inn for å se deltakende venner" forState:UIControlStateNormal];
+            [friendsButton addTarget:self action:@selector(fbLoginClicked:) forControlEvents:UIControlEventTouchUpInside];
             [attendingButton setHidden:YES];
+            
         } else {
-            [self attendDidChange];
-            [attendingButton setHidden:NO];
-            [attendingButton addTarget:self action:@selector(attendingClicked:) forControlEvents:UIControlEventTouchUpInside];
+            [friendsButton setFrame:CGRectMake(8, 220, 167, 37)];
+            [friendsButton setHidden:NO];
+            if (friendsTableViewController.listOfFriends == nil) {//prevent loading when friends are already loaded
+                [friendsTableViewController loadFriends:self];
+            }
+            [friendsButton addTarget:self action:@selector(pushFriendsView:) forControlEvents:UIControlEventTouchUpInside];
+            if (![delegate isLoggedIn]) {
+                [attendingButton setHidden:YES];
+            } else {
+                [self attendDidChange];
+                [attendingButton setHidden:NO];
+                [attendingButton addTarget:self action:@selector(attendingClicked:) forControlEvents:UIControlEventTouchUpInside];
+            }
         }
     }
 }
@@ -157,7 +163,7 @@ IBOutlet UIImage *eventImg;
     //[textLabel setFrame:CGRectMake(11, 290 + leadHeight, 300, textHeight)];
     [leadLabel setFrame:CGRectMake(leadLabel.frame.origin.x, leadLabel.frame.origin.y, 305, leadHeight)];
     [textLabel setFrame:CGRectMake(textLabel.frame.origin.x, textLabel.frame.origin.y + leadHeight, 305, textHeight)];
-
+    
     sView = (UIScrollView *) self.view;
     //sView.contentSize=CGSizeMake(1, leadHeight + textHeight + 290);//1 is less than width of iphone
     sView.contentSize=CGSizeMake(1, textHeight + leadHeight + leadLabel.frame.origin.y + 50);//1 is less than width of iphone
@@ -170,10 +176,10 @@ IBOutlet UIImage *eventImg;
     [favButton addTarget:self action:@selector(favoritesClicked:) forControlEvents:UIControlEventTouchUpInside];
     if ([event.favorites intValue] > 0) {
         //[favButton setImage:delegate.checkedImage forState:UIControlStateNormal];
-         [favButton setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
+        [favButton setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
     }
     else {
-       //[favButton setImage:delegate.uncheckedImage forState:UIControlStateNormal];
+        //[favButton setImage:delegate.uncheckedImage forState:UIControlStateNormal];
         [favButton setImage:[UIImage imageNamed:@"unfavorite.png"] forState:UIControlStateNormal];
     }
     self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithCustomView:favButton] autorelease];

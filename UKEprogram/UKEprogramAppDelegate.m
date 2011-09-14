@@ -163,16 +163,16 @@ NSNumber *flippedEventId;
 - (UIColor *) getColorForEventCategory:(NSString *)category
 {
     UIColor *color;
-    if ([category isEqualToString:@"konsert"]) {
+    if ([category isEqualToString:@"Konsert"]) {
         //color = [UIColor purpleColor];
         color = [UIColor colorWithRed:0.686 green:0.576 blue:0.776 alpha:1.0];
-    } else if ([category isEqualToString:@"revy-og-teater"]) {
+    } else if ([category isEqualToString:@"Revy og teater"]) {
         //color = [UIColor orangeColor];
         color = [UIColor colorWithRed:0.976 green:0.717 blue:0.545 alpha:1.0];
-    } else if ([category isEqualToString:@"andelig-fode"]) {
+    } else if ([category isEqualToString:@"Kurs og events"]) {
         //color = [UIColor cyanColor];
         color = [UIColor colorWithRed:0.5 green:0.854 blue:0.898 alpha:1.0];
-    } else if ([category isEqualToString:@"fest-og-moro"]) {
+    } else if ([category isEqualToString:@"Fest og moro"]) {
         //color = [UIColor magentaColor];
         color = [UIColor colorWithRed:0.92 green:0.698 blue:0.827 alpha:1.0];
     } else {
@@ -234,13 +234,15 @@ NSNumber *flippedEventId;
     [connection release];
 }
 
--(void) checkReachability
-{
+-(BOOL) isReachable {
     Reachability *r = [Reachability reachabilityForInternetConnection];
     NetworkStatus internetStatus = [r currentReachabilityStatus];
-    if (internetStatus == NotReachable) {
-        
-        //if (NO) { 
+    return internetStatus !=NotReachable;
+}
+
+-(void) checkReachability
+{
+    if (![self isReachable]) {
             NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for Œ laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
             UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Ingen nettilgang!" 
 														message:melding 
@@ -254,7 +256,6 @@ NSNumber *flippedEventId;
             [[NSNotificationCenter defaultCenter] postNotificationName:@"startActivityIndication" object:nil];
             [self getAllEvents];
         }
-  //  }
 }
 
 

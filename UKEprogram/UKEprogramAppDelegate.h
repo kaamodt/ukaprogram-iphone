@@ -55,4 +55,6 @@
 - (void)flipAttendStatus:(NSNumber *)eventId;
 - (BOOL)isLoggedIn;
 - (NSString *)getWeekDay:(NSDate *)date;
+- (void) checkReachability;
+- (BOOL) isReachable;
 @end
