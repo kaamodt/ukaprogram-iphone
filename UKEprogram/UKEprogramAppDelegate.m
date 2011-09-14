@@ -10,7 +10,7 @@
 #import "Event.h"
 #import "JSON.h"
 #import "OAuthConsumer.h"
-//#import "Reachability.h"
+#import "Reachability.h"
 
 @implementation UKEprogramAppDelegate
 
@@ -232,22 +232,24 @@ NSNumber *flippedEventId;
 
 -(void) checkReachability
 {
-    //Reachability *r = [Reachability reachabilityForInternetConnection];
-    //NetworkStatus internetStatus = [r currentReachabilityStatus];
-    //if(internetStatus == NotReachable) {
-    if (NO) {
-        NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for Œ laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Ingen nettilgang!" 
+    Reachability *r = [Reachability reachabilityForInternetConnection];
+    NetworkStatus internetStatus = [r currentReachabilityStatus];
+    if (internetStatus == NotReachable) {
+        
+        //if (NO) { 
+            NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for Œ laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Ingen nettilgang!" 
 														message:melding 
 													   delegate:nil 
 											  cancelButtonTitle:@"OK" 
 											  otherButtonTitles: nil];
-		[alert show];
-		[alert release];
-        [melding release];
-    } else {
-        [self getAllEvents];
-    }
+            [alert show];
+            [alert release];
+            [melding release];
+        } else {
+            [self getAllEvents];
+        }
+  //  }
 }
 
 
