@@ -13,7 +13,6 @@
 @interface UKEprogramAppDelegate : NSObject <UIApplicationDelegate> {
     IBOutlet UINavigationController * rootController;
     NSMutableData *eventResponseData;
-    //NSMutableData *loginResponseData;
     NSDateFormatter *dateFormat;
     NSDateFormatter *weekDayFormat;
     NSDateFormatter *onlyDateFormat;
@@ -22,11 +21,12 @@
     UIImage *checkedImage;
     UIImage *uncheckedImage;
     Facebook *facebook;
-    //NSURLConnection *eventFillConnection;
-    //NSURLConnection *loginConnection;
     NSString *formattedToken;
     OAConsumer *consumer;
     NSMutableArray *myEvents;
+    BOOL _lostInternetMessageShown;
+    BOOL _isLoggedIntoFacebook;
+    BOOL _isReachableCalledSinceInternetWasLost;
 }
 
 @property (nonatomic, retain) IBOutlet UIWindow *window;
@@ -42,6 +42,9 @@
 @property (retain) NSString *formattedToken;
 @property (retain) OAConsumer *consumer;
 @property (retain) NSMutableArray *myEvents;
+@property (nonatomic, assign) BOOL lostInternetMessageShown;
+@property (nonatomic, assign) BOOL isLoggedIntoFacebook;
+@property (nonatomic, assign) BOOL isReachableCalledSinceInternetWasLost;
 
 @property (nonatomic, retain, readonly) NSManagedObjectContext *managedObjectContext;
 @property (nonatomic, retain, readonly) NSManagedObjectModel *managedObjectModel;
@@ -57,4 +60,5 @@
 - (NSString *)getWeekDay:(NSDate *)date;
 - (void) checkReachability;
 - (BOOL) isReachable;
+- (void) showAlertWithMessage:(NSString*) message andTitle:(NSString*)title;
 @end

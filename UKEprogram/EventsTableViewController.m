@@ -128,14 +128,14 @@ bool isUsingPicker = NO;
     sectListOfEvents = [[NSMutableArray alloc] init];
     if ([listOfEvents count] > 0) {
         
-    
-    
+        
+        
         //Find first date (with time set to 00:00:00)
         Event *e = (Event *)[listOfEvents objectAtIndex:0];
         NSCalendar *gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
         NSDateComponents *comp = [gregorian components: (NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate: e.showingTime];
         NSDate *firstDate = [gregorian dateFromComponents:comp];
-    
+        
         //add events to sections based on time since firstdate
         NSNumber *lastDay = 0;
         NSMutableArray *events = [[NSMutableArray alloc] init];
@@ -251,14 +251,14 @@ bool isUsingPicker = NO;
 }
 
 /*
-- (id)initWithStyle:(UITableViewStyle)style
-{
-    self = [super initWithStyle:style];
-    if (self) {
-        // Custom initialization
-    }
-    return self;
-}*/
+ - (id)initWithStyle:(UITableViewStyle)style
+ {
+ self = [super initWithStyle:style];
+ if (self) {
+ // Custom initialization
+ }
+ return self;
+ }*/
 
 - (void)dealloc
 {
@@ -290,35 +290,35 @@ bool isUsingPicker = NO;
     
     editAttending = NO;
     listOfEvents = [[NSMutableArray alloc] init];
-
+    
     self.navigationItem.title = @"Program";
     /*filterButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    
-    filterButton.frame = CGRectMake(0, 0, 36, 31);
-    filterButton.tag = 3;
-    [filterButton addTarget:self action:@selector(comboClicked:) forControlEvents:UIControlEventTouchUpInside];
-
-    //[datePickButton setTitle:@"Dato" forState:UIControlStateNormal];
-    [filterButton setImage:[UIImage imageNamed:@"choose_button"] forState:UIControlStateNormal];*/
+     
+     filterButton.frame = CGRectMake(0, 0, 36, 31);
+     filterButton.tag = 3;
+     [filterButton addTarget:self action:@selector(comboClicked:) forControlEvents:UIControlEventTouchUpInside];
+     
+     //[datePickButton setTitle:@"Dato" forState:UIControlStateNormal];
+     [filterButton setImage:[UIImage imageNamed:@"choose_button"] forState:UIControlStateNormal];*/
     categoryChooser = [[UIBarButtonItem alloc] initWithTitle:@"Kategori" 
-                                                                      style:UIBarButtonItemStylePlain
-                                                                     target:self 
-                                                                     action:@selector(comboClicked:)];
+                                                       style:UIBarButtonItemStylePlain
+                                                      target:self 
+                                                      action:@selector(comboClicked:)];
 	
-
+    
     
     /*toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 5, 36, 31)];
-    
-    editAttendingButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    editAttendingButton.frame = CGRectMake(36, 0, 36, 31);
-    //[editAttendingButton setTitle:@"edit" forState:UIControlStateNormal];
-    [editAttendingButton setImage:[UIImage imageNamed:@"delta_pressed"] forState:UIControlStateNormal];
-    [editAttendingButton addTarget:self action:@selector(editAttendingClicked:) forControlEvents:UIControlEventTouchUpInside];
-    editAttendingButton.tag = 5;
-    [editAttendingButton retain];
-    
-    [toolbar addSubview:filterButton];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:toolbar];*/
+     
+     editAttendingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+     editAttendingButton.frame = CGRectMake(36, 0, 36, 31);
+     //[editAttendingButton setTitle:@"edit" forState:UIControlStateNormal];
+     [editAttendingButton setImage:[UIImage imageNamed:@"delta_pressed"] forState:UIControlStateNormal];
+     [editAttendingButton addTarget:self action:@selector(editAttendingClicked:) forControlEvents:UIControlEventTouchUpInside];
+     editAttendingButton.tag = 5;
+     [editAttendingButton retain];
+     
+     [toolbar addSubview:filterButton];
+     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:toolbar];*/
     
     
     [self setLoginButtons];
@@ -383,6 +383,15 @@ bool isUsingPicker = NO;
 
 - (void)viewWillAppear:(BOOL)animated
 {
+    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+    BOOL isReachable = [delegate isReachable];
+    if (!isReachable && delegate.isLoggedIntoFacebook && !delegate.lostInternetMessageShown) {
+        NSString * melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook!"];
+        [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+        delegate.lostInternetMessageShown = true;
+        delegate.isLoggedIntoFacebook = false;
+        [melding release];
+    }
     [eventsTableView reloadData];
     [super viewWillAppear:animated];
 }
@@ -390,6 +399,7 @@ bool isUsingPicker = NO;
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
+    
     //[filterButton setHidden:NO];
     //[datePickButton setHidden:NO];
     
@@ -466,7 +476,7 @@ bool isUsingPicker = NO;
 {
     UILabel *lblTemp;
     UITableViewCell *cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, 300, CELL_ROW_HEIGHT) reuseIdentifier:cellIdentifier] autorelease];
-    
+    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     //Initialize Label with tag 1.
     lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(10, 5, 290, 20)];
     lblTemp.tag = 1;
@@ -480,7 +490,7 @@ bool isUsingPicker = NO;
     [cell.contentView addSubview:lblTemp];
     [lblTemp release];
     //Initialize favorite button
-    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+    
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     button.frame = CGRectMake(260, 5, delegate.checkedImage.size.width*2, delegate.checkedImage.size.height*2);;
     button.tag = 3;
@@ -489,19 +499,21 @@ bool isUsingPicker = NO;
     [cell.contentView addSubview:button];
     //[button release];
     //Initialize attending label
+    
     lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(200, 27, 40, 13)];
     lblTemp.tag = 4;
     lblTemp.font = [UIFont boldSystemFontOfSize:12];
     lblTemp.textColor = [UIColor colorWithRed:0.66f green:0.99f blue:0.65 alpha:1.0f];
     [cell.contentView addSubview:lblTemp];
     [lblTemp release];
+    
     //Initialize color code
     lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(0 , 0, 6, CELL_ROW_HEIGHT )];
     lblTemp.tag = 5;
     lblTemp.backgroundColor = [UIColor lightGrayColor];
     [cell.contentView addSubview:lblTemp];
     [lblTemp release];
-
+    
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator; 
     
     return cell;
@@ -539,13 +551,12 @@ bool isUsingPicker = NO;
     static NSString *CellIdentifier = @"Cell";
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
-
+    
     if (cell == nil) {
         cell = [self getCellContentView:CellIdentifier];
     }
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     Event *e = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
-    //Event *e = (Event *) [listOfEvents objectAtIndex:indexPath.row];
     
     // Configure the cell...
     UILabel *titleLabel = (UILabel *)[cell viewWithTag:1];
@@ -564,7 +575,7 @@ bool isUsingPicker = NO;
     else {
         [button setImage:delegate.uncheckedImage forState:UIControlStateNormal];
     }
-    if ([delegate isLoggedIn] && [delegate isInMyEvents:e.id]) {
+    if ([delegate isLoggedIn] && [delegate isInMyEvents:e.id] && [delegate isReachable]) {
         UILabel *attendLabel = (UILabel *)[cell viewWithTag:4];
         attendLabel.text = @"Deltar";
         //titleLabel.text = [NSString stringWithFormat:@"%@ - Attending", e.title];
@@ -584,7 +595,7 @@ bool isUsingPicker = NO;
     NSString *s = [delegate.weekDays objectAtIndex:[[delegate.weekDayFormat stringFromDate:e.showingTime] intValue]];
     return [NSString stringWithFormat:@"%@ %@", s, [delegate.onlyDateFormat stringFromDate:e.showingTime]];
 }
-    
+
 
 
 

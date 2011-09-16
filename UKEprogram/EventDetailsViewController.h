@@ -12,6 +12,7 @@
 
 @interface EventDetailsViewController : UIViewController {
     IBOutlet UILabel *headerLabel;
+    IBOutlet UILabel *footerLabel;
     IBOutlet UILabel *leadLabel;
     IBOutlet UILabel *textLabel;
     IBOutlet UILabel *notInUseLabel;
@@ -25,6 +26,7 @@
     UIButton *favButton;
 }
 @property (retain) IBOutlet UILabel *headerLabel;
+@property (retain) IBOutlet UILabel *footerLabel;
 @property (retain) IBOutlet UILabel *leadLabel;
 @property (retain) IBOutlet UILabel *textLabel;
 @property (retain) IBOutlet UIScrollView *sView;

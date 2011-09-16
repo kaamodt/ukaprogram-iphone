@@ -26,6 +26,7 @@
 @synthesize settingsButton;
 @synthesize activityView;
 @synthesize activityLabel;
+
 //UIImageView *titleImage;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -56,7 +57,7 @@
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     self.settingsViewController = [[SettingsViewController alloc] initWithNibName:@"SettingsView" bundle:nil];
     [delegate.rootController pushViewController:settingsViewController animated:YES];
-
+    
 }
 
 -(void)facebookLogin:(id)sender
@@ -65,10 +66,16 @@
 }
 -(void)loginFacebook
 {
-    NSLog(@"LoginClicked");
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    Facebook *facebook = delegate.facebook;
-    [facebook authorize:nil delegate:self];
+    if ([delegate isReachable]){
+        Facebook *facebook = delegate.facebook;
+        [facebook authorize:nil delegate:self];
+    } else  {
+        NSString *melding = [[NSString alloc] initWithString:@"Ingen internett tilgang. Man trenger internett for å koble på facebook"];
+        [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+        [melding release];
+        delegate.lostInternetMessageShown=true;
+    }
 }
 
 -(void)facebookLogout:(id)sender
@@ -78,53 +85,63 @@
 }
 
 -(void)stopActivityIndication:(NSNotification *)notification
-	
+
 {
  	
-       [activityView stopAnimating];
+    [activityView stopAnimating];
  	
-       [activityView setHidden:YES];
+    [activityView setHidden:YES];
  	
-        [activityLabel setHidden:YES];
- 		
+    [activityLabel setHidden:YES];
+    
 }
 
 -(void)startActivityIndication:(NSNotification *)notification
-	
+
 {
- 		
-       [activityView startAnimating];
     
-       [activityView setHidden:NO];
- 		
-       [activityLabel setHidden:NO];
- 		
+    [activityView startAnimating];
+    
+    [activityView setHidden:NO];
+    
+    [activityLabel setHidden:NO];
+    
 }
 
 #pragma mark - View lifecycle
 
 /*
-// Implement loadView to create a view hierarchy programmatically, without using a nib.
-- (void)loadView
-{
+ // Implement loadView to create a view hierarchy programmatically, without using a nib.
+ - (void)loadView
+ {
+ }
+ */
+
+-(void)facebookSessionIsValid {
+    [fbLoginButton removeTarget:self action:@selector(facebookLogin:) forControlEvents:UIControlEventTouchUpInside];
+    [fbLoginButton addTarget:self action:@selector(facebookLogout:) forControlEvents:(UIControlEvents)UIControlEventTouchUpInside];
+    [fbLoginButton setTitle:@"Logg ut" forState:UIControlStateNormal];
+    [settingsButton setHidden:NO];
 }
-*/
+
+-(void)facebookSessionIsNotValid {
+    [fbLoginButton removeTarget:self action:@selector(facebookLogout:) forControlEvents:UIControlEventTouchUpInside];
+    [fbLoginButton addTarget:self action:@selector(facebookLogin:) forControlEvents:(UIControlEvents)UIControlEventTouchUpInside];
+    [fbLoginButton setTitle:@"Logg på" forState:UIControlStateNormal];
+    [settingsButton setHidden:YES];
+}
+
 
 - (void)setLoggedIn:(bool)sessionValid {
     if (!sessionValid) {
-        [fbLoginButton removeTarget:self action:@selector(facebookLogout:) forControlEvents:UIControlEventTouchUpInside];
-        [fbLoginButton addTarget:self action:@selector(facebookLogin:) forControlEvents:(UIControlEvents)UIControlEventTouchUpInside];
-        [fbLoginButton setTitle:@"Logg på" forState:UIControlStateNormal];
-        [settingsButton setHidden:YES];
+        [self facebookSessionIsNotValid];
     } else {
-        [fbLoginButton removeTarget:self action:@selector(facebookLogin:) forControlEvents:UIControlEventTouchUpInside];
-        [fbLoginButton addTarget:self action:@selector(facebookLogout:) forControlEvents:(UIControlEvents)UIControlEventTouchUpInside];
-        [fbLoginButton setTitle:@"Logg ut" forState:UIControlStateNormal];
-        [settingsButton setHidden:NO];
+        [self facebookSessionIsValid];
         UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
         [delegate loginBackend];
     }
 }
+
 
 -(void)allEventsClicked:(id)sender {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
@@ -149,6 +166,7 @@
 - (void)viewDidLoad
 {
     //NSLog(@"Loading startupView");
+    
     [super viewDidLoad];
     [allButton addTarget:self action:@selector(allEventsClicked:) forControlEvents:(UIControlEvents)UIControlEventTouchDown];
     [favoritesButton addTarget:self action:@selector(favoriteEventsClicked:) forControlEvents:(UIControlEvents)UIControlEventTouchDown];
@@ -156,7 +174,13 @@
     
     
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    [self setLoggedIn: [delegate.facebook isSessionValid]];
+    BOOL facebookSessionValid = [delegate.facebook isSessionValid];
+    if (facebookSessionValid) {
+        delegate.isLoggedIntoFacebook=true;
+    } else {
+        delegate.isLoggedIntoFacebook=false;
+    }
+    [self setLoggedIn: facebookSessionValid];
     [settingsButton addTarget:self action:@selector(settingsClicked:) forControlEvents:UIControlEventTouchDown];
     [activityView startAnimating];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(stopActivityIndication:) name:@"stopActivityIndication" object:nil];
@@ -186,16 +210,32 @@
     [super viewWillAppear:animated];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [[delegate rootController] setNavigationBarHidden:YES];
+    if(![delegate isReachable]) {
+        [self stopActivityIndication:nil];
+        if (![settingsButton isHidden]){
+            [self setLoggedIn:NO];
+            if (!(delegate.lostInternetMessageShown)){
+                NSString *melding = [[NSString alloc] initWithString:@"Du har mistet internettilgangen og ble derfor tilgangen til facebook"];
+                [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+                delegate.lostInternetMessageShown=true;
+                [melding release];
+            }
+        }
+    } else{
+        if ([delegate.facebook isSessionValid]){
+            [self facebookSessionIsValid];
+            delegate.isLoggedIntoFacebook=true;
+        } else {
+            [self facebookSessionIsNotValid];
+            delegate.isLoggedIntoFacebook=false;
+        }
+    }
 }
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    Reachability *r = [Reachability reachabilityForInternetConnection];
-    NetworkStatus internetStatus = [r currentReachabilityStatus];
-    if(internetStatus == NotReachable) {
-        [self stopActivityIndication:nil];
-        	
-    }
+    
+    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     
 }
 
@@ -207,7 +247,7 @@
 }
 - (void) notifyViews 
 {
-    NSLog(@"blabla %i", [self.navigationController.viewControllers count]);
+    //NSLog(@"blabla %i", [self.navigationController.viewControllers count]);
     if ([self.navigationController.viewControllers count] > 2) {
         EventsTableViewController *etView = (EventsTableViewController *)[self.navigationController.viewControllers objectAtIndex:1];
         EventDetailsViewController *edView = (EventDetailsViewController *)[self.navigationController.viewControllers objectAtIndex:2];
@@ -223,6 +263,7 @@
     [defaults setObject:[delegate.facebook expirationDate] forKey:@"FBExpirationDateKey"];
     [defaults synchronize];
     [self setLoggedIn: [delegate.facebook isSessionValid]];
+    delegate.isLoggedIntoFacebook=true;
     [self notifyViews];
 }
 
@@ -232,6 +273,7 @@
     [defaults setObject:[delegate.facebook accessToken] forKey:@"FBAccessTokenKey"];
     [defaults synchronize];
     [self setLoggedIn: [delegate.facebook isSessionValid]];
+    delegate.isLoggedIntoFacebook=false;
     [self notifyViews];
 }
 -(void)fbDidNotLogin:(BOOL)cancelled {

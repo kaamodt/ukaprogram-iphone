@@ -33,6 +33,7 @@
 @property (nonatomic, retain) IBOutlet UIActivityIndicatorView *activityView;
 @property (nonatomic, retain) IBOutlet UILabel *activityLabel;
 
+
 -(void) setLoggedIn:(bool)sessionValid;
 - (void)fbDidLogin;
 - (void)fbDidLogout;

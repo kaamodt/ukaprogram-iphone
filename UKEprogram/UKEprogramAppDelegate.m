@@ -32,6 +32,9 @@
 @synthesize formattedToken;
 @synthesize consumer;
 @synthesize myEvents;
+@synthesize lostInternetMessageShown = _lostInternetMessageShown;
+@synthesize isLoggedIntoFacebook = _isLoggedIntoFacebook;
+@synthesize isReachableCalledSinceInternetWasLost = _isReachableCalledSinceInternetWasLost;
 
 @synthesize persistentStoreCoordinator=__persistentStoreCoordinator;
 NSURLConnection *nsuc;
@@ -60,16 +63,16 @@ NSNumber *flippedEventId;
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
     [eventResponseData setLength:0];
-    NSLog(@"DIDRECEIVERESPONSE");
+    //NSLog(@"DIDRECEIVERESPONSE");
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
     [eventResponseData appendData:data];
-    NSLog(@"DIDRECEIVEDATA");
+    //NSLog(@"DIDRECEIVEDATA");
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError: (NSError *)error {
-    NSLog(@"DIDFAILWITHERROR");
+    //NSLog(@"DIDFAILWITHERROR");
 }
 /**
  * Request to uka backend to retrieve all events
@@ -196,10 +199,10 @@ NSNumber *flippedEventId;
     [self getMyEvents];
 }
 - (void) requestMyEvents:(OAServiceTicket *)ticket didFailWithError:(NSError *)error {
-    NSLog(@"unsuccessfull loading of my events %@", error);
+    //NSLog(@"unsuccessfull loading of my events %@", error);
 }
 -(void) requestMyEvents:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
-    NSLog(@"successfull loading of my events");
+    //NSLog(@"successfull loading of my events");
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSASCIIStringEncoding];
     NSArray *events = [responseString JSONValue];
     //NSLog(@"my events recieved: %@", responseString);
@@ -216,13 +219,7 @@ NSNumber *flippedEventId;
     }
     [numberFormat release];
 }
-/*
-    [self setFormattedToken:[[dict objectForKey:@"token"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-    [dict release];
-    NSLog(@"token: %@", formattedToken);
-}
-
-/**
+ /**
  *  Called when data is retrieved from connection, adds any new events to object context and displays only the events recieved from connection
  */
 #pragma mark NSURLConnection Delegate methods
@@ -237,39 +234,55 @@ NSNumber *flippedEventId;
 -(BOOL) isReachable {
     Reachability *r = [Reachability reachabilityForInternetConnection];
     NetworkStatus internetStatus = [r currentReachabilityStatus];
-    return internetStatus !=NotReachable;
+    if (internetStatus !=NotReachable){
+        _lostInternetMessageShown=false;
+        _isReachableCalledSinceInternetWasLost=false;
+        return TRUE;
+    } else {
+        if (!_isReachableCalledSinceInternetWasLost){
+            _lostInternetMessageShown = false;
+            _isReachableCalledSinceInternetWasLost=true;
+        }
+        return FALSE;
+    }
+    
 }
 
 -(void) checkReachability
 {
     if (![self isReachable]) {
-            NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for Œ laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Ingen nettilgang!" 
-														message:melding 
-													   delegate:nil 
-											  cancelButtonTitle:@"OK" 
-											  otherButtonTitles: nil];
-            [alert show];
-            [alert release];
-            [melding release];
-        } else {
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"startActivityIndication" object:nil];
-            [self getAllEvents];
-        }
+        NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for Œ laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
+        [self showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+        _lostInternetMessageShown = true;
+        [melding release];
+    } else {
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"startActivityIndication" object:nil];
+        [self getAllEvents];
+    }
+}
+
+-(void) showAlertWithMessage:(NSString*) message andTitle:(NSString*)title{
+    
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title 
+                                                    message:message 
+                                                   delegate:nil 
+                                          cancelButtonTitle:@"OK" 
+                                          otherButtonTitles: nil];
+    [alert show];
+    [alert release];
 }
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    NSLog(@"App Startet");    
     [self.window addSubview:rootController.view];
     dateFormat = [[NSDateFormatter alloc] init];
     [dateFormat setDateFormat:@"yyyy-MM-dd HH:mm"];
-    //[self checkReachability];
     // Override point for customization after application launch.
     [self.window makeKeyAndVisible];
     
-    
+    _lostInternetMessageShown=NO;
+    _isLoggedIntoFacebook=NO;
     weekDayFormat = [[NSDateFormatter alloc] init];
     [weekDayFormat setDateFormat:@"e"];
     onlyDateFormat = [[NSDateFormatter alloc] init];
@@ -286,7 +299,7 @@ NSNumber *flippedEventId;
         facebook.accessToken = [defaults objectForKey:@"FBAccessTokenKey"];
         facebook.expirationDate = [defaults objectForKey:@"FBExpirationDateKey"];
     }
-    
+    //hvor kommer disse verdiene fra?
     consumer = [[OAConsumer alloc] initWithKey:@"f0dd03cd03008bc28eb479957a2525fad84124cd" secret:@"d96b13251e446e21d396c677f3cf1e071085b8fb"];
     
     return YES;
@@ -349,11 +362,11 @@ NSNumber *flippedEventId;
     [responseString release];
     //NSDictionary *settings = [responseString JSONValue];
     //if ([settings objectForKey:@"success"]) {
-        if ([self isInMyEvents:flippedEventId]) {
-            [self.myEvents removeObject:flippedEventId];
-        } else {
-            [self.myEvents addObject:flippedEventId];
-        }
+    if ([self isInMyEvents:flippedEventId]) {
+        [self.myEvents removeObject:flippedEventId];
+    } else {
+        [self.myEvents addObject:flippedEventId];
+    }
     //}
 }
 - (BOOL) isLoggedIn
@@ -415,6 +428,7 @@ NSNumber *flippedEventId;
     [__managedObjectModel release];
     [__persistentStoreCoordinator release];
     [nsuc release];
+    _lostInternetMessageShown=nil;
     // Saves changes in the application's managed object context before the application terminates.
     [self saveContext];
 }
@@ -429,7 +443,7 @@ NSNumber *flippedEventId;
     /*
      Typically you should set up the Core Data stack here, usually by passing the managed object context to the first view controller.
      self.<#View controller#>.managedObjectContext = self.managedObjectContext;
-    */
+     */
 }
 
 - (void)saveContext

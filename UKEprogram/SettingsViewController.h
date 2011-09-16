@@ -10,8 +10,14 @@
 
 
 @interface SettingsViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource> {
-    IBOutlet UITableView *settingsTableView;
-    //NSMutableData *responseData;
+    IBOutlet UITableView *_settingsTableView;
+    NSArray *_settingsName;
+    NSArray *_settingsRealName;
+    NSArray *_settingsValue;
+    UIImage *_currentValue;
+    NSMutableArray *_selectedValue;
+    BOOL _loading;
+
 }
 
 @property (nonatomic, retain) UITableView *settingsTableView;

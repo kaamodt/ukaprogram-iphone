@@ -13,13 +13,7 @@
 
 @implementation SettingsViewController
 
-@synthesize settingsTableView;
-NSArray *settingsName;
-NSArray *settingsRealName;
-NSArray *settingsValue;
-UIImage *currentValue;
-NSMutableArray *selectedValue;
-BOOL loading;
+@synthesize settingsTableView = _settingsTableView;
 
 
 - (NSNumber *)mapValue:(NSString *)sValue
@@ -37,24 +31,6 @@ BOOL loading;
         return [NSNumber numberWithInt:3];
     }
 }
-/*
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-    [connection release];
-    NSLog(@"Connection closed");
-    NSString *responseString = [[NSString alloc] initWithData:responseData  encoding:NSASCIIStringEncoding];
-    NSLog(@"recieved %@", responseString);
-    [responseData release];
-    NSDictionary *settings = [responseString JSONValue];
-
-    [selectedValue replaceObjectAtIndex:0 withObject:[self mapValue:[settings valueForKey:@"positionPrivacySetting"]]];
-    [selectedValue replaceObjectAtIndex:1 withObject:[self mapValue:[settings valueForKey:@"eventsPrivacySetting"]]];
-    [selectedValue replaceObjectAtIndex:2 withObject:[self mapValue:[settings valueForKey:@"moneyPrivacySetting"]]];
-    [selectedValue replaceObjectAtIndex:3 withObject:[self mapValue:[settings valueForKey:@"mediaPrivacySetting"]]];
-    
-    loading = NO;
-    [settingsTableView reloadData];
-}
-*/
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -64,23 +40,6 @@ BOOL loading;
     }
     return self;
 }
-/*
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-    [responseData setLength:0];
-    NSLog(@"DIDRECEIVERESPONSE");
-}
-
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
-    [responseData appendData:data];
-    NSLog(@"DIDRECEIVEDATA");
-}
-
-- (void)connection:(NSURLConnection *)connection didFailWithError: (NSError *)error {
-    //self.twitterLabel.text = [NSString stringWithFormat:@"Connection failed: %@", [error description]];
-    //[myTableView setNeedsDisplay];
-    NSLog(@"DIDFAILWITHERROR");
-}
-*/
 /**
  * Request to uka backend to retrieve all events
  */
@@ -88,11 +47,11 @@ BOOL loading;
 - (void)dealloc
 {
     [super dealloc];
-    /*[settingsName dealloc];
-    [settingsValue dealloc];
-    [currentValue dealloc];
-    [settingsRealName dealloc];
-    [selectedValue dealloc];*/
+    /*[_settingsName dealloc];
+    [_settingsValue dealloc];
+    [_currentValue dealloc];
+    [_settingsRealName dealloc];
+    [_selectedValue dealloc];*/
 }
 
 - (void)didReceiveMemoryWarning
@@ -121,36 +80,36 @@ BOOL loading;
 }
 
 - (void) requestTicket:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
-    NSLog(@"successfull finish");
+    //NSLog(@"successfull finish");
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSUTF8StringEncoding];
-    NSLog(@"recieved %@", responseString);
+    //NSLog(@"recieved %@", responseString);
     NSDictionary *settings = [responseString JSONValue];
     
-    [selectedValue replaceObjectAtIndex:0 withObject:[self mapValue:[settings valueForKey:@"positionPrivacySetting"]]];
-    [selectedValue replaceObjectAtIndex:1 withObject:[self mapValue:[settings valueForKey:@"eventsPrivacySetting"]]];
-    [selectedValue replaceObjectAtIndex:2 withObject:[self mapValue:[settings valueForKey:@"moneyPrivacySetting"]]];
-    [selectedValue replaceObjectAtIndex:3 withObject:[self mapValue:[settings valueForKey:@"mediaPrivacySetting"]]];
+    [_selectedValue replaceObjectAtIndex:0 withObject:[self mapValue:[settings valueForKey:@"positionPrivacySetting"]]];
+    [_selectedValue replaceObjectAtIndex:1 withObject:[self mapValue:[settings valueForKey:@"eventsPrivacySetting"]]];
+    [_selectedValue replaceObjectAtIndex:2 withObject:[self mapValue:[settings valueForKey:@"moneyPrivacySetting"]]];
+    [_selectedValue replaceObjectAtIndex:3 withObject:[self mapValue:[settings valueForKey:@"mediaPrivacySetting"]]];
     
-    loading = NO;
-    [settingsTableView reloadData];
+    _loading = NO;
+    [_settingsTableView reloadData];
     [responseString release];
     //[data release];
 }
 
-// Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
+// Implement viewDidLoad to do additional setup after _loading the view, typically from a nib.
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    NSLog(@"TOOKEN %@", delegate.formattedToken);
+    //NSLog(@"TOOKEN %@", delegate.formattedToken);
     
-    settingsName = [[NSArray alloc] initWithObjects:@"Deling av posisjonsdata",@"Deling av arrangementsdata",@"Deling av pengebruk",@"Deling av media", nil];
-    settingsRealName = [[NSArray alloc] initWithObjects:@"positionPrivacySetting",@"eventsPrivacySetting",@"moneyPrivacySetting",@"mediaPrivacySetting", nil];
-    settingsValue = [[NSArray alloc] initWithObjects:@"Alle",@"Venner",@"Bare meg", nil];
-    currentValue = [UIImage imageNamed:@"currentValue"];
-    selectedValue = [[NSMutableArray alloc] initWithObjects:[NSNumber numberWithInt:1], [NSNumber numberWithInt:0], [NSNumber numberWithInt:2], [NSNumber numberWithInt:1], nil];
-    loading = YES;
+    _settingsName = [[NSArray alloc] initWithObjects:@"Deling av posisjonsdata",@"Deling av arrangementsdata",@"Deling av pengebruk",@"Deling av media", nil];
+    _settingsRealName = [[NSArray alloc] initWithObjects:@"positionPrivacySetting",@"eventsPrivacySetting",@"moneyPrivacySetting",@"mediaPrivacySetting", nil];
+    _settingsValue = [[NSArray alloc] initWithObjects:@"Alle",@"Venner",@"Bare meg", nil];
+    _currentValue = [UIImage imageNamed:@"currentValue"];
+    _selectedValue = [[NSMutableArray alloc] initWithObjects:[NSNumber numberWithInt:1], [NSNumber numberWithInt:0], [NSNumber numberWithInt:2], [NSNumber numberWithInt:1], nil];
+    _loading = YES;
     self.navigationItem.title = @"Innstillinger for UKApps";
     
     //OAuth
@@ -183,11 +142,11 @@ BOOL loading;
     [super viewDidUnload];
     // Release any retained subviews of the main view.
     // e.g. self.myOutlet = nil;
-    [settingsName release];
-    [settingsValue release];
-    [currentValue release];
-    [settingsRealName release];
-    [selectedValue release];
+    [_settingsName release];
+    [_settingsValue release];
+    [_currentValue release];
+    [_settingsRealName release];
+    [_selectedValue release];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -209,36 +168,37 @@ BOOL loading;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+    //Check is you still have internet access before changing settings
+    if (![delegate isReachable]){
+        [delegate.rootController popViewControllerAnimated:YES];
+        return;
+    }
     [self.settingsTableView deselectRowAtIndexPath:indexPath animated:NO];
-    if (!loading && [[selectedValue objectAtIndex:indexPath.section] intValue] != [[NSNumber numberWithUnsignedInteger:indexPath.row] intValue]) {
-        loading = YES;
+    if (!_loading && [[_selectedValue objectAtIndex:indexPath.section] intValue] != [[NSNumber numberWithUnsignedInteger:indexPath.row] intValue]) {
+        _loading = YES;
         [tableView reloadData];
-        
-        
         NSURL *url = [NSURL URLWithString:@"http://findmyapp.net/findmyapp/users/me/privacy"];
         OAMutableURLRequest *request = [[[OAMutableURLRequest alloc] initWithURL:url consumer:delegate.consumer token:nil realm:nil signatureProvider:nil] autorelease];
         [request setHTTPMethod:@"POST"];
         [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
         NSNumber *num = [NSNumber numberWithInt:([[NSNumber numberWithUnsignedInteger:indexPath.row] intValue] + 1)];
         //NSNumber *num = [NSNumber numberWithUnsignedInteger:indexPath.row];
-        NSLog(@"Posting %@: %i", [settingsRealName objectAtIndex:indexPath.section], [num intValue]);
-        OARequestParameter *postData = [[OARequestParameter alloc] initWithName:[settingsRealName objectAtIndex:indexPath.section] value:[num stringValue]];
+        NSLog(@"Posting %@: %i", [_settingsRealName objectAtIndex:indexPath.section], [num intValue]);
+        OARequestParameter *postData = [[OARequestParameter alloc] initWithName:[_settingsRealName objectAtIndex:indexPath.section] value:[num stringValue]];
         OARequestParameter *token = [[OARequestParameter alloc] initWithName:@"token" value:delegate.formattedToken];
         NSArray *params = [NSArray arrayWithObjects:postData, token, nil];
         [request setParameters:params];
         OADataFetcher *fetcher = [[[OADataFetcher alloc] init] autorelease];
         [fetcher fetchDataWithRequest:request delegate:self didFinishSelector:@selector(requestTicket:didFinishWithData:) didFailSelector:@selector(requestTicket:didFailWithError:)];
         
-        //[request release];
+       
         [postData release];
         [token release];
-        //[fetcher release];
     }
 }
 
 - (NSString *)tableView:(UITableView *) tableView titleForHeaderInSection:(NSInteger)section {
-    
-    return [settingsName objectAtIndex:section];
+    return [_settingsName objectAtIndex:section];
 }
 
 - (UITableViewCell *) getCellContentView:(NSString *)cellIdentifier 
@@ -274,12 +234,12 @@ BOOL loading;
     UIImageView *view = (UIImageView *)[cell viewWithTag:2];
     
     
-    [textLabel setText:[settingsValue objectAtIndex:indexPath.row]];
-    if (loading) {
+    [textLabel setText:[_settingsValue objectAtIndex:indexPath.row]];
+    if (_loading) {
         
     }
-    else if ([[selectedValue objectAtIndex:indexPath.section] isEqualToNumber:[NSNumber numberWithUnsignedInteger:indexPath.row ]]) {
-        [view setImage:currentValue];
+    else if ([[_selectedValue objectAtIndex:indexPath.section] isEqualToNumber:[NSNumber numberWithUnsignedInteger:indexPath.row ]]) {
+        [view setImage:_currentValue];
     }
     
     

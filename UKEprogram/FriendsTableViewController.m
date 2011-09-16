@@ -78,6 +78,7 @@
 - (void) requestTicket:(OAServiceTicket *)ticket didFailWithError:(NSError *)error {
     NSLog(@"unsuccessfull finish %@", error);
     [eventDetailsViewController.friendsButton setHidden:YES];
+    [eventDetailsViewController release];
 }
 
 - (void) requestTicket:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
@@ -94,6 +95,7 @@
         [listOfFriends addObject:name];
     }
     [eventDetailsViewController.friendsButton setTitle:[NSString stringWithFormat:@"%i venner skal delta", [listOfFriends count]] forState:UIControlStateNormal];
+    [eventDetailsViewController.friendsButton setEnabled:YES];
     [self setTitle:[NSString stringWithFormat:@"%i venner skal delta", [listOfFriends count]]];
     [eventDetailsViewController release];
     
@@ -116,9 +118,9 @@
     OADataFetcher *fetcher = [[[OADataFetcher alloc] init] autorelease];
     [fetcher fetchDataWithRequest:request delegate:self didFinishSelector:@selector(requestTicket:didFinishWithData:) didFailSelector:@selector(requestTicket:didFailWithError:)];
     
-    //[request release];
+    
     [tokenParam release];
-    //[fetcher release];
+   
 }
 - (void)viewWillAppear:(BOOL)animated
 {

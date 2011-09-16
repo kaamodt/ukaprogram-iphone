@@ -24,6 +24,7 @@
  */
 @implementation EventDetailsViewController
 @synthesize headerLabel;
+@synthesize footerLabel;
 @synthesize leadLabel;
 @synthesize textLabel;
 @synthesize event;
@@ -33,6 +34,7 @@
 @synthesize attendingButton;
 @synthesize friendsButton;
 @synthesize loadSpinner;
+NSThread* myThread;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -45,6 +47,7 @@
 
 - (void)dealloc
 {
+    [loadSpinner release];
     [super dealloc];
     
 }
@@ -78,8 +81,18 @@
 - (void)attendingClicked:(id)sender
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    [delegate flipAttendStatus:event.id];
-    [self attendDidChange];
+    if ([delegate isReachable]) {
+        [delegate flipAttendStatus:event.id];
+        [self attendDidChange];
+    } else if (!(delegate.lostInternetMessageShown)) {
+        [attendingButton setHidden:YES];
+        
+        NSString *melding = [[NSString alloc] initWithString:@"Det ser ut som du har mistet tilgangen til internett. Man trenger internett for å endre status."];
+        [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+        [melding release];
+        delegate.lostInternetMessageShown=true;
+        
+    }
 }
 
 - (void)pushFriendsView:(id)sender
@@ -92,21 +105,34 @@
 - (void)setLoginButtons
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    [friendsButton setHidden:YES];
+    if (![delegate isReachable]){
+        if (!(delegate.lostInternetMessageShown) && delegate.isLoggedIntoFacebook){
+            NSString *melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook!"];
+            [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+            delegate.lostInternetMessageShown=true;
+            delegate.isLoggedIntoFacebook = false;
+            [melding release];
+        }
+    }
+    if (friendsTableViewController.listOfFriends == nil) {
+        [friendsButton setHidden:YES];
+    }
+    
     [attendingButton setHidden:YES];
+    
     if ([delegate isReachable]) {
         if (![delegate isLoggedIn]) {
-            
             [friendsButton setFrame:CGRectMake(8, 220, 250, 37)];
             [friendsButton setTitle:@"Logg inn for å se deltakende venner" forState:UIControlStateNormal];
             [friendsButton addTarget:self action:@selector(fbLoginClicked:) forControlEvents:UIControlEventTouchUpInside];
             [attendingButton setHidden:YES];
-            
+            [friendsButton setHidden:NO];
+            [friendsButton setEnabled:YES];
         } else {
             [friendsButton setFrame:CGRectMake(8, 220, 167, 37)];
             [friendsButton setHidden:NO];
             if (friendsTableViewController.listOfFriends == nil) {//prevent loading when friends are already loaded
-                [friendsTableViewController loadFriends:self];
+                [self performSelectorInBackground:@selector(friendsTableLoadFriends) withObject:nil];
             }
             [friendsButton addTarget:self action:@selector(pushFriendsView:) forControlEvents:UIControlEventTouchUpInside];
             if (![delegate isLoggedIn]) {
@@ -119,6 +145,13 @@
         }
     }
 }
+//Hjelpemetode for å loade friends uten at alt henger seg
+-(void)friendsTableLoadFriends {
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    [friendsTableViewController loadFriends:self];
+    [pool drain];
+    
+}
 
 
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
@@ -128,6 +161,9 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    //Hide buttons
+    [friendsButton setHidden:YES];
+    [attendingButton setHidden:YES];
     
     //Put the loadSpinner into the eventImgView
     loadSpinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
@@ -150,7 +186,15 @@
     NSString *dateString = [[NSString alloc] initWithFormat:@"%@ %@", [delegate.onlyDateFormat stringFromDate:event.showingTime], [delegate.onlyTimeFormat stringFromDate:event.showingTime]]; 
     NSString *labelText = [[NSString alloc] initWithFormat:@"%@ %@ %@ %i,-", event.placeString, [delegate getWeekDay:event.showingTime], dateString, [event.lowestPrice intValue]];
     [dateString release];
+    
+    
     [headerLabel setText:labelText];
+    headerLabel.backgroundColor = [delegate getColorForEventCategory:event.eventType];
+ 	headerLabel.textColor = [UIColor darkGrayColor];
+ 	footerLabel.text = [NSString stringWithFormat:@"%@ år  %i,-", event.ageLimit, [event.lowestPrice intValue]];
+ 	footerLabel.backgroundColor = [delegate getColorForEventCategory:event.eventType];
+ 	footerLabel.textColor = [UIColor darkGrayColor];
+    
     [labelText release];
     //find the size of lead and description text
     CGSize constraintSize = CGSizeMake(300.0f, MAXFLOAT);
@@ -159,27 +203,23 @@
     labelSize = [event.lead sizeWithFont:leadLabel.font constrainedToSize:constraintSize lineBreakMode:UILineBreakModeWordWrap];
     CGFloat leadHeight = labelSize.height;
     //Set the lead and text labels to the size found
-    //[leadLabel setFrame:CGRectMake(11, 275, 300, leadHeight)];
-    //[textLabel setFrame:CGRectMake(11, 290 + leadHeight, 300, textHeight)];
     [leadLabel setFrame:CGRectMake(leadLabel.frame.origin.x, leadLabel.frame.origin.y, 305, leadHeight)];
     [textLabel setFrame:CGRectMake(textLabel.frame.origin.x, textLabel.frame.origin.y + leadHeight, 305, textHeight)];
     
     sView = (UIScrollView *) self.view;
-    //sView.contentSize=CGSizeMake(1, leadHeight + textHeight + 290);//1 is less than width of iphone
     sView.contentSize=CGSizeMake(1, textHeight + leadHeight + leadLabel.frame.origin.y + 50);//1 is less than width of iphone
+    //Må denne linja kjøres når viewet loades? Den tar laaang tid
+    [friendsButton setEnabled:NO];
     friendsTableViewController = [[FriendsTableViewController alloc] initWithNibName:@"FriendsTableView" bundle:nil];
     
     
     favButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    //favButton.frame = CGRectMake(0, 0, delegate.checkedImage.size.width*2, delegate.checkedImage.size.height*2);
     favButton.frame = CGRectMake(0, 0, 40, 40);
     [favButton addTarget:self action:@selector(favoritesClicked:) forControlEvents:UIControlEventTouchUpInside];
     if ([event.favorites intValue] > 0) {
-        //[favButton setImage:delegate.checkedImage forState:UIControlStateNormal];
         [favButton setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
     }
     else {
-        //[favButton setImage:delegate.uncheckedImage forState:UIControlStateNormal];
         [favButton setImage:[UIImage imageNamed:@"unfavorite.png"] forState:UIControlStateNormal];
     }
     self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithCustomView:favButton] autorelease];
@@ -255,7 +295,6 @@
     if (doWeNeedToDownLoadImage) {
         UIImage *img = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://uka.no/%@", event.image]]]];
         if (img != nil) {
-            NSLog(@"IMAGE DOWNLOADED");
             eventImgView.image = img;
             NSString *jpegFilePath = [NSString stringWithFormat:@"%@/%@.jpeg",docDir,fileNameWithoutExtention];
             NSData *data = [NSData dataWithData:UIImageJPEGRepresentation(img, 1.0f)];//1.0f = 100% quality
