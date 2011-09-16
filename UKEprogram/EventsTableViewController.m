@@ -454,6 +454,35 @@ bool isUsingPicker = NO;
     }
 }
 
+-(void) attendClicked:(id)sender event:(id)event{
+    NSSet *touches = [event allTouches];
+    UITouch *touch = [touches anyObject];
+    CGPoint currentTouchPosition = [touch locationInView:eventsTableView];
+    NSIndexPath *indexPath = [eventsTableView indexPathForRowAtPoint:currentTouchPosition];
+    if (indexPath != nil) {
+        NSError *error;
+        UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+        NSManagedObjectContext *con = [delegate managedObjectContext];
+        
+        //Event *e = (Event *)[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
+        UITableViewCell *cell = [eventsTableView cellForRowAtIndexPath:indexPath];
+        NSNumber *eventID = [[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row] id];
+        UIButton *button = (UIButton *)[cell viewWithTag:4];
+        [delegate flipAttendStatus:eventID];
+         if ([delegate isInMyEvents:eventID]){
+             [button setImage:delegate.facebookIcon forState:UIControlStateNormal];
+         } else {
+             [button setImage:delegate.uncheckedFacebookIcon forState:UIControlStateNormal];
+         }
+        if (![con save:&error]) {
+            //NSLog(@"Lagring av %@ feilet", e.title);
+        } else {
+            //NSLog(@"Lagret event %@", e.title);
+        }
+    }
+
+}
+
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -474,6 +503,7 @@ bool isUsingPicker = NO;
  */
 - (UITableViewCell *) getCellContentView:(NSString *)cellIdentifier 
 {
+    
     UILabel *lblTemp;
     UITableViewCell *cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, 300, CELL_ROW_HEIGHT) reuseIdentifier:cellIdentifier] autorelease];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
@@ -492,23 +522,28 @@ bool isUsingPicker = NO;
     //Initialize favorite button
     
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.frame = CGRectMake(260, 5, delegate.checkedImage.size.width*2, delegate.checkedImage.size.height*2);;
+    button.frame = CGRectMake(260, 12, delegate.checkedImage.size.width*1.5, delegate.checkedImage.size.height*2);
     button.tag = 3;
     [button addTarget:self action:@selector(favoritesClicked:event:) forControlEvents:UIControlEventTouchUpInside];
     button.backgroundColor = [UIColor clearColor];
     [cell.contentView addSubview:button];
-    //[button release];
     //Initialize attending label
+    UIButton *attendButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    attendButton.frame = CGRectMake(260-delegate.facebookIcon.size.width*1.5, 13, delegate.facebookIcon.size.width*1.5, delegate.facebookIcon.size.height*2);
+    attendButton.backgroundColor = [UIColor clearColor];
+    attendButton.tag = 4;
+    [attendButton addTarget:self action:@selector(attendClicked:event:) forControlEvents:UIControlEventTouchUpInside];
+    [cell.contentView addSubview:attendButton];
     
-    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(200, 27, 40, 13)];
+    /*lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(200, 12, delegate.facebookIcon.size.width*2 , delegate.facebookIcon.size.height*2)];
     lblTemp.tag = 4;
     lblTemp.font = [UIFont boldSystemFontOfSize:12];
     lblTemp.textColor = [UIColor colorWithRed:0.66f green:0.99f blue:0.65 alpha:1.0f];
     [cell.contentView addSubview:lblTemp];
-    [lblTemp release];
+    [lblTemp release];*/
     
     //Initialize color code
-    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(0 , 0, 6, CELL_ROW_HEIGHT )];
+    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(0 , 0, 6, CELL_ROW_HEIGHT-6)];//vet ikke hvorfor, men cell row height er ikke cell row height. Derfor minus 6 for å få fargekoden til å passe
     lblTemp.tag = 5;
     lblTemp.backgroundColor = [UIColor lightGrayColor];
     [cell.contentView addSubview:lblTemp];
@@ -576,12 +611,12 @@ bool isUsingPicker = NO;
         [button setImage:delegate.uncheckedImage forState:UIControlStateNormal];
     }
     if ([delegate isLoggedIn] && [delegate isInMyEvents:e.id] && [delegate isReachable]) {
-        UILabel *attendLabel = (UILabel *)[cell viewWithTag:4];
-        attendLabel.text = @"Deltar";
-        //titleLabel.text = [NSString stringWithFormat:@"%@ - Attending", e.title];
+        
+        UIButton  * attendButton = (UIButton *) [cell viewWithTag:4];
+        [attendButton setImage:delegate.facebookIcon forState:UIControlStateNormal];  
     } else {
-        UILabel *attendLabel = (UILabel *)[cell viewWithTag:4];
-        attendLabel.text = @"";
+        UIButton * attendButton = (UIButton *) [cell viewWithTag:4];
+        [attendButton setImage:delegate.uncheckedFacebookIcon forState:UIControlStateNormal];
     }
     
     return cell;
@@ -607,16 +642,16 @@ bool isUsingPicker = NO;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    if (!editAttending) {
+    //if (!editAttending) {
         eventDetailsViewController = [[EventDetailsViewController alloc] initWithNibName:@"EventDetailsView" bundle:nil];
         eventDetailsViewController.event = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
         [delegate.rootController pushViewController:eventDetailsViewController animated:YES];
-    }
+    /*}
     else {
         [eventsTableView deselectRowAtIndexPath:indexPath animated:NO];
         [delegate flipAttendStatus:[[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row] id]];
         [eventsTableView reloadData];
-    }
+    }*/
 }
 
 -(void)snapToPosition:(UIScrollView *)sView

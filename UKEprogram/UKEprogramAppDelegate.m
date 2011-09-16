@@ -28,6 +28,8 @@
 @synthesize weekDays;
 @synthesize checkedImage;
 @synthesize uncheckedImage;
+@synthesize facebookIcon;
+@synthesize uncheckedFacebookIcon;
 @synthesize facebook;
 @synthesize formattedToken;
 @synthesize consumer;
@@ -185,13 +187,13 @@ NSNumber *flippedEventId;
 }
 
 - (void) requestLogin:(OAServiceTicket *)ticket didFailWithError:(NSError *)error {
-    NSLog(@"unsuccessfull backend login %@", error);
+    //NSLog(@"unsuccessfull backend login %@", error);
     //logout facebook?
 }
 
 - (void) requestLogin:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSASCIIStringEncoding];
-    NSLog(@"Login recieved: %@", responseString);
+    //NSLog(@"Login recieved: %@", responseString);
     [formattedToken release];
     formattedToken = [[responseString stringByReplacingOccurrencesOfString:@"\"" withString:@""] stringByReplacingOccurrencesOfString:@" " withString:@""];
     [formattedToken retain];
@@ -292,6 +294,8 @@ NSNumber *flippedEventId;
     weekDays = [[NSArray alloc] initWithObjects:@"ubrukt",@"S¿ndag",@"Mandag",@"Tirsdag",@"Onsdag",@"Torsdag",@"Fredag",@"L¿rdag", nil];
     checkedImage = [UIImage imageNamed:@"favorite.png"];
     uncheckedImage = [UIImage imageNamed:@"unfavorite.png"];
+    facebookIcon = [UIImage imageNamed:@"faceIcon20x20.png"];
+    uncheckedFacebookIcon = [UIImage imageNamed:@"faceIconunchecked20x20.png"];
     
     facebook = [[Facebook alloc] initWithAppId:@"219501071426021"];
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -422,6 +426,8 @@ NSNumber *flippedEventId;
     [dateFormat release];
     [checkedImage release];
     [uncheckedImage release];
+    [uncheckedFacebookIcon release];
+    [facebookIcon release];
     [rootController release];
     [_window release];
     [__managedObjectContext release];

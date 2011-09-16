@@ -20,6 +20,8 @@
     NSArray *weekDays;
     UIImage *checkedImage;
     UIImage *uncheckedImage;
+    UIImage *facebookIcon;
+    UIImage *uncheckedFacebookIcon;
     Facebook *facebook;
     NSString *formattedToken;
     OAConsumer *consumer;
@@ -38,6 +40,8 @@
 @property (retain) NSArray *weekDays;
 @property (retain) UIImage *checkedImage;
 @property (retain) UIImage *uncheckedImage;
+@property (retain) UIImage *facebookIcon;
+@property (retain) UIImage *uncheckedFacebookIcon;
 @property (nonatomic, retain) Facebook *facebook;
 @property (retain) NSString *formattedToken;
 @property (retain) OAConsumer *consumer;
@@ -45,6 +49,7 @@
 @property (nonatomic, assign) BOOL lostInternetMessageShown;
 @property (nonatomic, assign) BOOL isLoggedIntoFacebook;
 @property (nonatomic, assign) BOOL isReachableCalledSinceInternetWasLost;
+
 
 @property (nonatomic, retain, readonly) NSManagedObjectContext *managedObjectContext;
 @property (nonatomic, retain, readonly) NSManagedObjectModel *managedObjectModel;

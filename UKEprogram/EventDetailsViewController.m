@@ -72,9 +72,11 @@ NSThread* myThread;
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     if (![delegate isInMyEvents:event.id]) {
-        [attendingButton setTitle:@"Sett som deltakende" forState:UIControlStateNormal];
+        [attendingButton setTitle:@"Delta" forState:UIControlStateNormal];
+        [attendingButton setImage:delegate.uncheckedFacebookIcon forState:UIControlStateNormal];
     } else {
         [attendingButton setTitle:@"Ikke delta" forState:UIControlStateNormal];
+        [attendingButton setImage:delegate.facebookIcon forState:UIControlStateNormal];
     }
 }
 
