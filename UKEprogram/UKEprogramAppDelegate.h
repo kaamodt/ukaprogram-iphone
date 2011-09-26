@@ -18,10 +18,6 @@
     NSDateFormatter *onlyDateFormat;
     NSDateFormatter *onlyTimeFormat;
     NSArray *weekDays;
-    UIImage *checkedImage;
-    UIImage *uncheckedImage;
-    UIImage *facebookIcon;
-    UIImage *uncheckedFacebookIcon;
     Facebook *facebook;
     NSString *formattedToken;
     OAConsumer *consumer;
@@ -38,10 +34,6 @@
 @property (retain) NSDateFormatter *onlyDateFormat;
 @property (retain) NSDateFormatter *onlyTimeFormat;
 @property (retain) NSArray *weekDays;
-@property (retain) UIImage *checkedImage;
-@property (retain) UIImage *uncheckedImage;
-@property (retain) UIImage *facebookIcon;
-@property (retain) UIImage *uncheckedFacebookIcon;
 @property (nonatomic, retain) Facebook *facebook;
 @property (retain) NSString *formattedToken;
 @property (retain) OAConsumer *consumer;
@@ -66,4 +58,7 @@
 - (void) checkReachability;
 - (BOOL) isReachable;
 - (void) showAlertWithMessage:(NSString*) message andTitle:(NSString*)title;
+- (BOOL)appHasLaunchedBefore;
+
+
 @end

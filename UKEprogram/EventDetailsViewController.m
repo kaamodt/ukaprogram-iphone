@@ -27,6 +27,7 @@
 @synthesize footerLabel;
 @synthesize leadLabel;
 @synthesize textLabel;
+@synthesize titleLabel;
 @synthesize event;
 @synthesize sView;
 @synthesize eventImgView;
@@ -68,15 +69,15 @@ NSThread* myThread;
  {
  }
  */
-- (void)attendDidChange
+- (void)setAttendButton
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     if (![delegate isInMyEvents:event.id]) {
         [attendingButton setTitle:@"Delta" forState:UIControlStateNormal];
-        [attendingButton setImage:delegate.uncheckedFacebookIcon forState:UIControlStateNormal];
+        [attendingButton setImage:[UIImage imageNamed:@"faceIconunchecked20x20.png"] forState:UIControlStateNormal];
     } else {
         [attendingButton setTitle:@"Ikke delta" forState:UIControlStateNormal];
-        [attendingButton setImage:delegate.facebookIcon forState:UIControlStateNormal];
+        [attendingButton setImage:[UIImage imageNamed:@"faceIcon20x20.png"]  forState:UIControlStateNormal];
     }
 }
 
@@ -85,7 +86,7 @@ NSThread* myThread;
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     if ([delegate isReachable]) {
         [delegate flipAttendStatus:event.id];
-        [self attendDidChange];
+        [self setAttendButton];
     } else if (!(delegate.lostInternetMessageShown)) {
         [attendingButton setHidden:YES];
         
@@ -124,26 +125,24 @@ NSThread* myThread;
     
     if ([delegate isReachable]) {
         if (![delegate isLoggedIn]) {
-            [friendsButton setFrame:CGRectMake(8, 220, 250, 37)];
+            [friendsButton setFrame:CGRectMake(friendsButton.frame.origin.x, friendsButton.frame.origin.y, 250, 37)];
             [friendsButton setTitle:@"Logg inn for å se deltakende venner" forState:UIControlStateNormal];
             [friendsButton addTarget:self action:@selector(fbLoginClicked:) forControlEvents:UIControlEventTouchUpInside];
             [attendingButton setHidden:YES];
             [friendsButton setHidden:NO];
             [friendsButton setEnabled:YES];
+            [attendingButton setHidden:YES];
         } else {
-            [friendsButton setFrame:CGRectMake(8, 220, 167, 37)];
+            [friendsButton setFrame:CGRectMake(friendsButton.frame.origin.x, friendsButton.frame.origin.y, 167, 37)];
             [friendsButton setHidden:NO];
             if (friendsTableViewController.listOfFriends == nil) {//prevent loading when friends are already loaded
                 [self performSelectorInBackground:@selector(friendsTableLoadFriends) withObject:nil];
             }
+            [self setAttendButton];
             [friendsButton addTarget:self action:@selector(pushFriendsView:) forControlEvents:UIControlEventTouchUpInside];
-            if (![delegate isLoggedIn]) {
-                [attendingButton setHidden:YES];
-            } else {
-                [self attendDidChange];
-                [attendingButton setHidden:NO];
-                [attendingButton addTarget:self action:@selector(attendingClicked:) forControlEvents:UIControlEventTouchUpInside];
-            }
+            [attendingButton setHidden:NO];
+            [attendingButton addTarget:self action:@selector(attendingClicked:) forControlEvents:UIControlEventTouchUpInside];
+            
         }
     }
 }
@@ -154,6 +153,8 @@ NSThread* myThread;
     [pool drain];
     
 }
+
+
 
 
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
@@ -167,12 +168,15 @@ NSThread* myThread;
     [friendsButton setHidden:YES];
     [attendingButton setHidden:YES];
     
+    
+    
+    
     //Put the loadSpinner into the eventImgView
-    loadSpinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+    loadSpinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
     [loadSpinner setCenter:CGPointMake(eventImgView.frame.size.width/2, eventImgView.frame.size.height/2)];
     [eventImgView addSubview:loadSpinner];
     
-    [self setTitle:event.title];
+    //[self setTitle:event.title];
     event.lead = [event.lead stringByReplacingOccurrencesOfString:@"\r\n\r\n" withString:@"###"];
     event.lead = [event.lead stringByReplacingOccurrencesOfString:@"\r\n" withString:@" "];
     event.lead = [event.lead stringByReplacingOccurrencesOfString:@"###" withString:@"\r\n\r\n"];
@@ -186,14 +190,31 @@ NSThread* myThread;
     
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     NSString *dateString = [[NSString alloc] initWithFormat:@"%@ %@", [delegate.onlyDateFormat stringFromDate:event.showingTime], [delegate.onlyTimeFormat stringFromDate:event.showingTime]]; 
-    NSString *labelText = [[NSString alloc] initWithFormat:@"%@ %@ %@ %i,-", event.placeString, [delegate getWeekDay:event.showingTime], dateString, [event.lowestPrice intValue]];
+    NSString *labelText = [[NSString alloc] initWithFormat:@"%@  -   %@ %@ ", event.placeString, [delegate getWeekDay:event.showingTime], dateString];
     [dateString release];
     
-    
+    [titleLabel setText:event.title];
     [headerLabel setText:labelText];
     headerLabel.backgroundColor = [delegate getColorForEventCategory:event.eventType];
  	headerLabel.textColor = [UIColor darkGrayColor];
- 	footerLabel.text = [NSString stringWithFormat:@"%@ år  %i,-", event.ageLimit, [event.lowestPrice intValue]];
+    NSString * ageLimit;
+    if ([event.ageLimit intValue]!=0){
+        ageLimit =  [NSString stringWithFormat:@"Aldersgrense: %@ år", event.ageLimit];
+        
+    } else {
+        ageLimit =  [NSString stringWithFormat:@"Ingen aldersgrense"];
+    }
+    NSString * pris;
+    if (event.lowestPrice!=0){
+        pris = [NSString stringWithFormat:@"Pris: %i kr", [event.lowestPrice intValue]];
+    } else {
+        pris = [NSString stringWithFormat:@"Gratis"];
+    }
+    NSString *footerText = [ageLimit stringByAppendingString:@"  -  "];
+    footerText = [footerText stringByAppendingString:pris];
+    footerLabel.lineBreakMode = UILineBreakModeWordWrap; 
+    footerLabel.numberOfLines = 0;
+ 	footerLabel.text = footerText;
  	footerLabel.backgroundColor = [delegate getColorForEventCategory:event.eventType];
  	footerLabel.textColor = [UIColor darkGrayColor];
     
@@ -210,13 +231,12 @@ NSThread* myThread;
     
     sView = (UIScrollView *) self.view;
     sView.contentSize=CGSizeMake(1, textHeight + leadHeight + leadLabel.frame.origin.y + 50);//1 is less than width of iphone
-    //Må denne linja kjøres når viewet loades? Den tar laaang tid
     [friendsButton setEnabled:NO];
     friendsTableViewController = [[FriendsTableViewController alloc] initWithNibName:@"FriendsTableView" bundle:nil];
     
     
     favButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    favButton.frame = CGRectMake(0, 0, 40, 40);
+    favButton.frame = CGRectMake(0, 0, 20, 20);
     [favButton addTarget:self action:@selector(favoritesClicked:) forControlEvents:UIControlEventTouchUpInside];
     if ([event.favorites intValue] > 0) {
         [favButton setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
@@ -236,11 +256,12 @@ NSThread* myThread;
     NSManagedObjectContext *con = [delegate managedObjectContext];
     if ([event.favorites intValue] > 0) {
         event.favorites = [NSNumber numberWithInt:0];
-        [favButton setImage:delegate.uncheckedImage forState:UIControlStateNormal];
+        [favButton setImage:[UIImage imageNamed:@"unfavorite.png"] forState:UIControlStateNormal];
+
     }
     else {
         event.favorites = [NSNumber numberWithInt:1];
-        [favButton setImage:delegate.checkedImage forState:UIControlStateNormal];
+        [favButton setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
     }
     if (![con save:&error]) {
         NSLog(@"Lagring av %@ feilet", event.title);
@@ -295,7 +316,7 @@ NSThread* myThread;
     }
     
     if (doWeNeedToDownLoadImage) {
-        UIImage *img = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://uka.no/%@", event.image]]]];
+        UIImage *img = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:event.image]]];
         if (img != nil) {
             eventImgView.image = img;
             NSString *jpegFilePath = [NSString stringWithFormat:@"%@/%@.jpeg",docDir,fileNameWithoutExtention];
@@ -329,10 +350,10 @@ NSThread* myThread;
 {
     [sView setNeedsLayout];
     // Return YES for supported orientations
-    return (interfaceOrientation == UIInterfaceOrientationPortrait || 
-            interfaceOrientation == UIInterfaceOrientationLandscapeRight || 
-            interfaceOrientation == UIInterfaceOrientationLandscapeLeft ||
-            interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);// || 
+            //interfaceOrientation == UIInterfaceOrientationLandscapeRight || 
+            //interfaceOrientation == UIInterfaceOrientationLandscapeLeft ||
+            //interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
 }
 
 @end

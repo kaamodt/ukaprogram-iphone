@@ -25,7 +25,8 @@
 @synthesize fbLoginButton;
 @synthesize settingsButton;
 @synthesize activityView;
-@synthesize activityLabel;
+@synthesize refresh;	
+@synthesize loaderView;
 
 //UIImageView *titleImage;
 
@@ -40,6 +41,13 @@
 
 - (void)dealloc
 {
+    [self.allButton release];
+ 	[self.artistButton release];
+ 	[self.favoritesButton release];
+    [self.eventsTableViewController release];
+ 	[self.activityView release];
+ 	[self.refresh release];
+ 	[self.loaderView release];
     [self.eventsTableViewController release];
     [super dealloc];
 }
@@ -53,7 +61,7 @@
 }
 -(void)settingsClicked:(id)sender
 {
-    [settingsViewController release];
+    //[settingsViewController release];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     self.settingsViewController = [[SettingsViewController alloc] initWithNibName:@"SettingsView" bundle:nil];
     [delegate.rootController pushViewController:settingsViewController animated:YES];
@@ -71,7 +79,7 @@
         Facebook *facebook = delegate.facebook;
         [facebook authorize:nil delegate:self];
     } else  {
-        NSString *melding = [[NSString alloc] initWithString:@"Ingen internett tilgang. Man trenger internett for å koble på facebook"];
+        NSString *melding = [[NSString alloc] initWithString:@"Ingen internett tilgang. Man trenger internett for å koble på facebook!"];
         [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
         [melding release];
         delegate.lostInternetMessageShown=true;
@@ -84,28 +92,23 @@
     [delegate.facebook logout:self];
 }
 
--(void)stopActivityIndication:(NSNotification *)notification
-
+-(void)startActivityIndication:(NSNotification *)notification
 {
- 	
+    [loaderView setHidden:NO];
+    [refresh setHidden:YES];
+    [activityView startAnimating];
+}
+-(void)stopActivityIndication:(NSNotification *)notification
+{
+    [loaderView setHidden:YES];
+    [refresh setHidden:NO];
     [activityView stopAnimating];
- 	
-    [activityView setHidden:YES];
- 	
-    [activityLabel setHidden:YES];
-    
+    [activityView setHidesWhenStopped:YES];
 }
 
--(void)startActivityIndication:(NSNotification *)notification
-
-{
-    
-    [activityView startAnimating];
-    
-    [activityView setHidden:NO];
-    
-    [activityLabel setHidden:NO];
-    
+- (IBAction)refreshEvents:(id)sender {
+ 	UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+ 	[delegate checkReachability];
 }
 
 #pragma mark - View lifecycle
@@ -145,7 +148,6 @@
 
 -(void)allEventsClicked:(id)sender {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    //self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
     [delegate.rootController pushViewController:eventsTableViewController animated:YES];
     [eventsTableViewController showAllEvents];
     NSDate *now = [[NSDate alloc] init];
@@ -153,7 +155,6 @@
     [now release];
 }
 -(void)favoriteEventsClicked:(id)sender {
-    //self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [delegate.rootController pushViewController:eventsTableViewController animated:YES];
     [eventsTableViewController showFavoriteEventsFromFilterView:NO];
@@ -171,8 +172,6 @@
     [allButton addTarget:self action:@selector(allEventsClicked:) forControlEvents:(UIControlEvents)UIControlEventTouchDown];
     [favoritesButton addTarget:self action:@selector(favoriteEventsClicked:) forControlEvents:(UIControlEvents)UIControlEventTouchDown];
     self.navigationItem.title = @"Hjem";
-    
-    
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     BOOL facebookSessionValid = [delegate.facebook isSessionValid];
     if (facebookSessionValid) {
@@ -182,10 +181,18 @@
     }
     [self setLoggedIn: facebookSessionValid];
     [settingsButton addTarget:self action:@selector(settingsClicked:) forControlEvents:UIControlEventTouchDown];
-    [activityView startAnimating];
+    //[activityView startAnimating];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(stopActivityIndication:) name:@"stopActivityIndication" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startActivityIndication:) name:@"startActivityIndication" object:nil];
     self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
+ 	 if ([delegate appHasLaunchedBefore]){
+        [refresh setHidden:NO];
+        [loaderView setHidden:YES];
+        } else {
+             [activityView startAnimating];
+             [refresh setHidden:YES];
+        }
+    [activityView setHidesWhenStopped:YES];
 }
 
 
@@ -215,7 +222,7 @@
         if (![settingsButton isHidden]){
             [self setLoggedIn:NO];
             if (!(delegate.lostInternetMessageShown)){
-                NSString *melding = [[NSString alloc] initWithString:@"Du har mistet internettilgangen og ble derfor tilgangen til facebook"];
+                NSString *melding = [[NSString alloc] initWithString:@"Du har mistet internettilgangen og ble derfor tilgangen til facebook!"];
                 [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
                 delegate.lostInternetMessageShown=true;
                 [melding release];
@@ -234,9 +241,6 @@
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    
-    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    
 }
 
 - (void)viewWillDisappear:(BOOL)animated
@@ -249,9 +253,9 @@
 {
     //NSLog(@"blabla %i", [self.navigationController.viewControllers count]);
     if ([self.navigationController.viewControllers count] > 2) {
-        EventsTableViewController *etView = (EventsTableViewController *)[self.navigationController.viewControllers objectAtIndex:1];
+        //EventsTableViewController *etView = (EventsTableViewController *)[self.navigationController.viewControllers objectAtIndex:1];
         EventDetailsViewController *edView = (EventDetailsViewController *)[self.navigationController.viewControllers objectAtIndex:2];
-        [etView setLoginButtons];
+        //[etView setLoginButtons];
         [edView setLoginButtons];
     }
 }
@@ -279,5 +283,7 @@
 -(void)fbDidNotLogin:(BOOL)cancelled {
     
 }
+
+
 
 @end

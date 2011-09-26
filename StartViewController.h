@@ -20,7 +20,8 @@
     IBOutlet UIButton *settingsButton;
     IBOutlet SettingsViewController *settingsViewController;
     IBOutlet UIActivityIndicatorView *activityView;
- 	IBOutlet UILabel *activityLabel;
+    IBOutlet UIButton *refresh;
+    IBOutlet UIView *loaderView;
     
 }
 @property (nonatomic, retain) UIButton *allButton;
@@ -31,7 +32,8 @@
 @property (nonatomic, retain) UIButton *settingsButton;
 @property (nonatomic, retain) SettingsViewController *settingsViewController;
 @property (nonatomic, retain) IBOutlet UIActivityIndicatorView *activityView;
-@property (nonatomic, retain) IBOutlet UILabel *activityLabel;
+@property (nonatomic, retain) IBOutlet UIButton *refresh;
+@property (nonatomic, retain) IBOutlet UIView *loaderView;
 
 
 -(void) setLoggedIn:(bool)sessionValid;

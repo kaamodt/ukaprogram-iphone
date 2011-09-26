@@ -127,13 +127,6 @@
     
     
     [token release];
-    /*
-    NSString *eventsApiUrl = [NSString stringWithFormat: @"http://findmyapp.net/findmyapp/users/1/privacy"];
-    responseData = [[NSMutableData data] retain];
-    NSURLRequest *request = [NSURLRequest requestWithURL: [NSURL URLWithString:eventsApiUrl]];
-    NSLog(@"Opening connection");
-    [[NSURLConnection alloc] initWithRequest:request delegate:self];
-    */
 }
 
 
@@ -168,7 +161,7 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    //Check is you still have internet access before changing settings
+    //Check you still have internet access before changing settings
     if (![delegate isReachable]){
         [delegate.rootController popViewControllerAnimated:YES];
         return;
@@ -201,21 +194,17 @@
     return [_settingsName objectAtIndex:section];
 }
 
+
 - (UITableViewCell *) getCellContentView:(NSString *)cellIdentifier 
 {
     UILabel *lblTemp;
     UITableViewCell *cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, 300, 35)] autorelease];
-    UIImageView *tempView;
     //Initialize Label with tag 1.
     lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(10, 5, 290, 30)];
     lblTemp.tag = 1;
     [cell.contentView addSubview:lblTemp];
     [lblTemp release];
     
-    tempView = [[UIImageView alloc] initWithFrame:CGRectMake(250, 10, 30, 30)];
-    tempView.tag = 2;
-    [cell.contentView addSubview:tempView];
-    [tempView release];
     return cell;
 }
 
@@ -231,7 +220,6 @@
     }
     // Configure the cell...
     UILabel *textLabel = (UILabel *)[cell viewWithTag:1];
-    UIImageView *view = (UIImageView *)[cell viewWithTag:2];
     
     
     [textLabel setText:[_settingsValue objectAtIndex:indexPath.row]];
@@ -239,7 +227,8 @@
         
     }
     else if ([[_selectedValue objectAtIndex:indexPath.section] isEqualToNumber:[NSNumber numberWithUnsignedInteger:indexPath.row ]]) {
-        [view setImage:_currentValue];
+        //[view setImage:_currentValue];
+        cell.accessoryType = UITableViewCellAccessoryCheckmark;
     }
     
     

@@ -21,11 +21,8 @@
 @synthesize filterViewController;
 @synthesize eventsTableView;
 @synthesize pickerView;
-@synthesize categoryChooser;
+@synthesize categoryChooser, sideSwipeView, sideSwipeCell, animatingSideSwipe, sideSwipeDirection;
 UIButton *filterButton;
-UIButton *editAttendingButton;
-UIToolbar *toolbar;
-BOOL editAttending;
 //int days;
 NSMutableArray *sectListOfEvents;
 static int secondsInDay = 86400;
@@ -116,6 +113,7 @@ bool isUsingPicker = NO;
     bildeView.alpha = 0.6;
     [self.view addSubview:bildeView];
     [bildeView release];
+    
 }
 
 /**
@@ -262,6 +260,7 @@ bool isUsingPicker = NO;
 
 - (void)dealloc
 {
+    [filterViewController release];
     [categoryChooser release];
     [super dealloc];
 }
@@ -280,58 +279,284 @@ bool isUsingPicker = NO;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+    animatingSideSwipe = NO;
     lastScrollUpdate = [NSDate date];
     [lastScrollUpdate retain];
-    
     [eventsTableView setDelegate:self];
     [eventsTableView setDataSource:self];
     [pickerView setDelegate:self];
-    
-    editAttending = NO;
     listOfEvents = [[NSMutableArray alloc] init];
-    
     self.navigationItem.title = @"Program";
-    /*filterButton = [UIButton buttonWithType:UIButtonTypeCustom];
-     
-     filterButton.frame = CGRectMake(0, 0, 36, 31);
-     filterButton.tag = 3;
-     [filterButton addTarget:self action:@selector(comboClicked:) forControlEvents:UIControlEventTouchUpInside];
-     
-     //[datePickButton setTitle:@"Dato" forState:UIControlStateNormal];
-     [filterButton setImage:[UIImage imageNamed:@"choose_button"] forState:UIControlStateNormal];*/
     categoryChooser = [[UIBarButtonItem alloc] initWithTitle:@"Kategori" 
                                                        style:UIBarButtonItemStylePlain
                                                       target:self 
                                                       action:@selector(comboClicked:)];
-	
+    UISwipeGestureRecognizer *gesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(didSwipe:)];
+    gesture.direction = UISwipeGestureRecognizerDirectionRight;
+    UISwipeGestureRecognizer *removeMenyGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(removeMenySwipe:)];
+    removeMenyGesture.direction = UISwipeGestureRecognizerDirectionLeft;
+    [eventsTableView addGestureRecognizer:gesture];
+    [eventsTableView addGestureRecognizer:removeMenyGesture];
+    [gesture release];
+    [removeMenyGesture release];
     
     
-    /*toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 5, 36, 31)];
-     
-     editAttendingButton = [UIButton buttonWithType:UIButtonTypeCustom];
-     editAttendingButton.frame = CGRectMake(36, 0, 36, 31);
-     //[editAttendingButton setTitle:@"edit" forState:UIControlStateNormal];
-     [editAttendingButton setImage:[UIImage imageNamed:@"delta_pressed"] forState:UIControlStateNormal];
-     [editAttendingButton addTarget:self action:@selector(editAttendingClicked:) forControlEvents:UIControlEventTouchUpInside];
-     editAttendingButton.tag = 5;
-     [editAttendingButton retain];
-     
-     [toolbar addSubview:filterButton];
-     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:toolbar];*/
     
     
-    [self setLoginButtons];
+    
+    UILabel * lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(75, 30, 50, 13)];
+    lblTemp.tag = 1;
+    lblTemp.font = [UIFont boldSystemFontOfSize:12];
+    lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
+    lblTemp.text = @"Favoritt";
+    lblTemp.textAlignment = UITextAlignmentCenter;
+    [sideSwipeView addSubview:lblTemp];
+    [lblTemp release];
+    
+    UIButton *favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    favoriteButton.frame = CGRectMake(85, 2, 50-20, 50-20);
+    favoriteButton.tag = 3;
+    [favoriteButton addTarget:self action:@selector(favoritesClicked:event:) forControlEvents:UIControlEventTouchUpInside];
+    favoriteButton.backgroundColor = [UIColor clearColor];
+    [sideSwipeView addSubview:favoriteButton];
+    //Initialize attending label
+    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(175, 30, 50, 13)];
+    lblTemp.tag = 2;
+    lblTemp.font = [UIFont boldSystemFontOfSize:12];
+    lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
+    lblTemp.text = @"Delta";
+    lblTemp.textAlignment = UITextAlignmentCenter;
+    [sideSwipeView addSubview:lblTemp];
+    [lblTemp release];
+    UIButton *attendButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    attendButton.frame = CGRectMake(185, 2, 50-20, 50-20);
+    attendButton.backgroundColor = [UIColor clearColor];
+    attendButton.tag = 4;
+    [attendButton addTarget:self action:@selector(attendClicked:event:) forControlEvents:UIControlEventTouchUpInside];
+    [attendButton setHidden:YES];
+    [attendButton setEnabled:NO];
+    [sideSwipeView addSubview:attendButton];
+    
+    
 }
-- (void)setLoginButtons
+
+
+
+#define PUSH_STYLE_ANIMATION NO
+#define BOUNCE_PIXELS 5.0
+
+- (void) removeSideSwipeView:(BOOL)animated
 {
-    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    if ([delegate isLoggedIn]) {
-        [toolbar setFrame:CGRectMake(0, 5, 72, 31)];
-        [toolbar addSubview:editAttendingButton];
-        NSLog(@"LA TIL ATTENDINGBUTTON");
+    // Make sure we have a cell where the side swipe view appears and that we aren't in the middle of animating
+    if (!sideSwipeCell || animatingSideSwipe) return;
+    
+    if (animated)
+    {
+        // The first step in a bounce animation is to move the side swipe view a bit offscreen
+        [UIView beginAnimations:nil context:nil];
+        [UIView setAnimationDuration:0.2];
+        
+        if (PUSH_STYLE_ANIMATION){
+            sideSwipeView.frame = CGRectMake(-sideSwipeView.frame.size.width + BOUNCE_PIXELS,sideSwipeView.frame.origin.y,sideSwipeView.frame.size.width, sideSwipeView.frame.size.height);
+        }
+        animatingSideSwipe = YES;
+        [UIView setAnimationDelegate:self];
+        [UIView setAnimationDidStopSelector:@selector(animationDidStopOne:finished:context:)];
+        [UIView commitAnimations];
+    }
+    else
+    {
+        [sideSwipeView removeFromSuperview];
+        sideSwipeCell.frame = CGRectMake(0,sideSwipeCell.frame.origin.y,sideSwipeCell.frame.size.width, sideSwipeCell.frame.size.height);
+        //[self editGestureDeactivatedInCell:self.sideSwipeCell];
+        self.sideSwipeCell = nil;
     }
 }
+
+-(void)removeMenySwipe:(UIGestureRecognizer *)gestureRecognizer  {
+    if (gestureRecognizer.state == UIGestureRecognizerStateEnded) {
+        
+        CGPoint swipeLocation = [gestureRecognizer locationInView:self.eventsTableView];
+        NSIndexPath *swipedIndexPath = [self.eventsTableView indexPathForRowAtPoint:swipeLocation];
+        UITableViewCell* swipedCell = [self.eventsTableView cellForRowAtIndexPath:swipedIndexPath];
+        if (swipedCell.frame.origin.x != 0)
+        {
+            [self removeSideSwipeView:YES];
+            return;
+        }
+    }
+    
+}
+
+- (void)animationDidStopOne:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context
+{
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:0.2];
+    
+    if (PUSH_STYLE_ANIMATION)
+        sideSwipeView.frame = CGRectMake(-sideSwipeView.frame.size.width + BOUNCE_PIXELS*2,sideSwipeView.frame.origin.y,sideSwipeView.frame.size.width, sideSwipeView.frame.size.height);
+    sideSwipeCell.frame = CGRectMake(BOUNCE_PIXELS*2, sideSwipeCell.frame.origin.y, sideSwipeCell.frame.size.width, sideSwipeCell.frame.size.height);
+    
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:@selector(animationDidStopTwo:finished:context:)];
+    [UIView setAnimationCurve:UIViewAnimationCurveLinear];
+    [UIView commitAnimations];
+}
+
+// The final step in a bounce animation is to move the side swipe completely offscreen
+- (void)animationDidStopTwo:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context
+{
+    [UIView commitAnimations];
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:0.2];
+    
+    if (PUSH_STYLE_ANIMATION)
+        sideSwipeView.frame = CGRectMake(-sideSwipeView.frame.size.width ,sideSwipeView.frame.origin.y,sideSwipeView.frame.size.width, sideSwipeView.frame.size.height);
+    sideSwipeCell.frame = CGRectMake(0, sideSwipeCell.frame.origin.y, sideSwipeCell.frame.size.width, sideSwipeCell.frame.size.height);
+    
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:@selector(animationDidStopThree:finished:context:)];
+    [UIView setAnimationCurve:UIViewAnimationCurveLinear];
+    [UIView commitAnimations];
+}
+
+// When the bounce animation is completed, remove the side swipe view and reset some state
+- (void)animationDidStopThree:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context
+{
+    animatingSideSwipe = NO;
+    self.sideSwipeCell = nil;
+    [sideSwipeView removeFromSuperview];
+}
+
+-(void)setMenyButtonsWithIndexPath:(NSIndexPath*)indexPath{
+    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+    Event *e = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
+    UIButton * favoriteButton = (UIButton *) [sideSwipeView viewWithTag:3];
+    UIButton * attendButton = (UIButton *) [sideSwipeView viewWithTag:4];
+    UILabel * attendLabel = (UILabel *) [sideSwipeView viewWithTag:2];
+    if ([e.favorites intValue] > 0) {
+        [favoriteButton setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
+    }
+    else {
+        [favoriteButton setImage:[UIImage imageNamed:@"unfavorite.png"] forState:UIControlStateNormal];
+    }
+    if ([delegate isLoggedIn]  && [delegate isReachable]) {
+        [attendButton setHidden:NO];
+        [attendButton setEnabled:YES];
+        [attendLabel setHidden:NO];
+        if ([delegate isInMyEvents:e.id]){
+            [attendButton setImage:[UIImage imageNamed:@"facebook.png"] forState:UIControlStateNormal];  
+        } else {
+            [attendButton setImage:[UIImage imageNamed:@"facebookunchecked.png"] forState:UIControlStateNormal];
+        }
+    } else {
+        [attendButton setImage:nil forState:UIControlStateNormal];
+        [attendButton setHidden:YES];
+        [attendLabel setHidden:YES];
+        [attendButton setEnabled:NO];
+    }
+    
+    
+    //NSLog(@"view x %f and y %f", sideSwipeView.frame.origin.x, sideSwipeView.frame.origin.y);
+}
+
+
+- (void) addSwipeViewTo:(UITableViewCell*)cell
+{
+    sideSwipeView.frame =  cell.frame;
+    [self setMenyButtonsWithIndexPath:[eventsTableView indexPathForCell:cell]];  
+    // Add the side swipe view to the table below the cell
+    [eventsTableView insertSubview:sideSwipeView belowSubview:cell];
+    //[eventsTableView addSubview:sideSwipeView];
+    
+    // Remember which cell the side swipe view is displayed on and the swipe direction
+    self.sideSwipeCell = cell;
+    CGRect cellFrame = cell.frame;
+    if (PUSH_STYLE_ANIMATION)
+    {
+        // Move the side swipe view offscreen either to the left or the right depending on the swipe direction
+        sideSwipeView.frame = CGRectMake(-cellFrame.size.width , cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
+    }
+    else
+    {
+        // Move the side swipe view to offset 0
+        sideSwipeView.frame = CGRectMake(0, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
+    }
+    // Animate in the side swipe view
+    animatingSideSwipe = YES;
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:0.2];
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:@selector(animationDidStopAddingSwipeView:finished:context:)];
+    if (PUSH_STYLE_ANIMATION)
+    {
+        sideSwipeView.frame = CGRectMake(0, cell.frame.origin.y, cellFrame.size.width, cellFrame.size.height);
+    }
+    cell.frame = CGRectMake(cellFrame.size.width, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
+    [UIView commitAnimations];
+}
+
+// Called when a left swipe occurred
+
+
+
+
+-(void)didSwipe:(UIGestureRecognizer *)gestureRecognizer  {
+    NSLog(@"gesture");
+    
+    if (gestureRecognizer.state == UIGestureRecognizerStateEnded) {
+        
+        CGPoint swipeLocation = [gestureRecognizer locationInView:self.eventsTableView];
+        NSIndexPath *swipedIndexPath = [self.eventsTableView indexPathForRowAtPoint:swipeLocation];
+        UITableViewCell* swipedCell = [self.eventsTableView cellForRowAtIndexPath:swipedIndexPath];
+        if (swipedCell.frame.origin.x != 0)
+        {
+            //[self removeSideSwipeView:YES];
+            return;
+        }
+        //[self removeSideSwipeView:NO];
+        if (swipedCell!= sideSwipeCell && !animatingSideSwipe)
+            [self addSwipeViewTo:swipedCell];
+    }
+    
+}
+
+- (NSIndexPath *)tableView:(UITableView *)theTableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [self removeSideSwipeView:YES];
+    return indexPath;
+}
+
+// UIScrollViewDelegate
+// When the table is scrolled, animate the removal of the side swipe view
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
+{
+    if (scrollView == pickerView) {
+        isUsingPicker = YES;
+        //NSLog(@"Started picker");
+    } else {
+        isUsingPicker = NO;
+        //NSLog(@"Stopped using picker");
+    }
+    
+    [self removeSideSwipeView:YES];
+}
+
+// When the table is scrolled to the top, remove the side swipe view
+- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView
+{
+    [self removeSideSwipeView:NO];
+    return YES;
+}
+
+
+
+// Note that the animation is done
+- (void)animationDidStopAddingSwipeView:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context
+{
+    animatingSideSwipe = NO;
+}
+
 
 
 - (void)viewDidUnload
@@ -341,10 +566,8 @@ bool isUsingPicker = NO;
     [filterViewController release];
     [filterButton release];
     [sectListOfEvents release];
-    [editAttendingButton release];
-    [toolbar release];
-    //[listOfEvents release];
     [lastScrollUpdate release];
+    [sideSwipeView release];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
     // e.g. self.myOutlet = nil;
@@ -361,25 +584,12 @@ bool isUsingPicker = NO;
 
 - (void)comboClicked:(id)sender
 {
-    [filterViewController release];
+    //[filterViewController release];
     self.filterViewController = [[FilterViewController alloc] initWithNibName:@"FilterView" bundle:nil];
     [self.filterViewController setEventsTableViewController:self];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [delegate.rootController presentModalViewController:filterViewController animated:YES];
 }
-
--(void)editAttendingClicked:(id)sender
-{
-    if (editAttending) {
-        editAttending = NO;
-        [editAttendingButton setImage:[UIImage imageNamed:@"delta_pressed"] forState:UIControlStateNormal];
-    } else {
-        editAttending = YES;
-        [editAttendingButton setImage:[UIImage imageNamed:@"delta"] forState:UIControlStateNormal];
-    }
-}
-
-
 
 - (void)viewWillAppear:(BOOL)animated
 {
@@ -393,12 +603,15 @@ bool isUsingPicker = NO;
         [melding release];
     }
     [eventsTableView reloadData];
+    [self snapToPosition:pickerView];
     [super viewWillAppear:animated];
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
+    
     [super viewDidAppear:animated];
+    
     
     //[filterButton setHidden:NO];
     //[datePickButton setHidden:NO];
@@ -408,6 +621,7 @@ bool isUsingPicker = NO;
 - (void)viewWillDisappear:(BOOL)animated
 {
     [super viewWillDisappear:animated];
+    
     //[filterButton setHidden:YES];
     //[datePickButton setHidden:YES];
 }
@@ -425,26 +639,28 @@ bool isUsingPicker = NO;
 
 - (void)favoritesClicked:(id)sender event:(id)event
 {
-    
     NSSet *touches = [event allTouches];
     UITouch *touch = [touches anyObject];
     CGPoint currentTouchPosition = [touch locationInView:eventsTableView];
     NSIndexPath *indexPath = [eventsTableView indexPathForRowAtPoint:currentTouchPosition];
+    
     if (indexPath != nil) {
         NSError *error;
+        UITableViewCell * cell = [eventsTableView cellForRowAtIndexPath:indexPath];
         UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
         NSManagedObjectContext *con = [delegate managedObjectContext];
-        
         Event *e = (Event *)[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
-        UITableViewCell *cell = [eventsTableView cellForRowAtIndexPath:indexPath];
-        UIButton *button = (UIButton *)[cell viewWithTag:3];
+        UIButton *button = (UIButton *)[sideSwipeView viewWithTag:3];
+        UIImageView * favoriteView = (UIImageView *) [cell viewWithTag:3];
         if ([e.favorites intValue] > 0) {
             e.favorites = [NSNumber numberWithInt:0];
-            [button setImage:delegate.uncheckedImage forState:UIControlStateNormal];
+            [button setImage:[UIImage imageNamed:@"unfavorite.png"] forState:UIControlStateNormal];
+            [favoriteView setImage:nil];
         }
         else {
             e.favorites = [NSNumber numberWithInt:1];
-            [button setImage:delegate.checkedImage forState:UIControlStateNormal];
+            [button setImage:[UIImage imageNamed:@"favorite.png"] forState:UIControlStateNormal];
+            [favoriteView setImage:[UIImage imageNamed:@"favorite.png"]];
         }
         if (![con save:&error]) {
             //NSLog(@"Lagring av %@ feilet", e.title);
@@ -455,32 +671,49 @@ bool isUsingPicker = NO;
 }
 
 -(void) attendClicked:(id)sender event:(id)event{
+    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     NSSet *touches = [event allTouches];
     UITouch *touch = [touches anyObject];
     CGPoint currentTouchPosition = [touch locationInView:eventsTableView];
     NSIndexPath *indexPath = [eventsTableView indexPathForRowAtPoint:currentTouchPosition];
-    if (indexPath != nil) {
-        NSError *error;
-        UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-        NSManagedObjectContext *con = [delegate managedObjectContext];
-        
-        //Event *e = (Event *)[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
-        UITableViewCell *cell = [eventsTableView cellForRowAtIndexPath:indexPath];
-        NSNumber *eventID = [[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row] id];
-        UIButton *button = (UIButton *)[cell viewWithTag:4];
-        [delegate flipAttendStatus:eventID];
-         if ([delegate isInMyEvents:eventID]){
-             [button setImage:delegate.facebookIcon forState:UIControlStateNormal];
-         } else {
-             [button setImage:delegate.uncheckedFacebookIcon forState:UIControlStateNormal];
-         }
-        if (![con save:&error]) {
-            //NSLog(@"Lagring av %@ feilet", e.title);
+    UIButton *button = (UIButton *)[sideSwipeView viewWithTag:4];
+   
+        if ([delegate isReachable]) {
+            
+            
+            if (indexPath != nil) {
+                UITableViewCell * cell = [eventsTableView cellForRowAtIndexPath:indexPath];
+                NSError *error;
+                UIImageView * attendView = (UIImageView *) [cell viewWithTag:4];
+                NSManagedObjectContext *con = [delegate managedObjectContext];
+                
+                NSNumber *eventID = [[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row] id];
+                
+                [delegate flipAttendStatus:eventID];
+                if ([delegate isInMyEvents:eventID]){
+                    [button setImage:[UIImage imageNamed:@"facebook.png"] forState:UIControlStateNormal];
+                    [attendView setImage:[UIImage imageNamed:@"facebook.png"]];
+                } else {
+                    [button setImage:[UIImage imageNamed:@"facebookunchecked.png"] forState:UIControlStateNormal];
+                    [attendView setImage:nil];
+                }
+                if (![con save:&error]) {
+                    //NSLog(@"Lagring av %@ feilet", e.title);
+                } else {
+                    //NSLog(@"Lagret event %@", e.title);
+                }
+            }
         } else {
-            //NSLog(@"Lagret event %@", e.title);
+            NSString *melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook!"];
+            [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
+            [melding release];
+            delegate.lostInternetMessageShown=true;
+            delegate.isLoggedIntoFacebook = false;
+            [button setHidden:YES];
+            [button setEnabled:NO];
+            [self updateTable];
         }
-    }
-
+    
 }
 
 #pragma mark - Table view data source
@@ -506,10 +739,10 @@ bool isUsingPicker = NO;
     
     UILabel *lblTemp;
     UITableViewCell *cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, 300, CELL_ROW_HEIGHT) reuseIdentifier:cellIdentifier] autorelease];
-    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     //Initialize Label with tag 1.
-    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(10, 5, 290, 20)];
+    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(10, 5, 280, 20)];
     lblTemp.tag = 1;
+    //lblTemp.font = [UIFont systemFontOfSize:14];
     [cell.contentView addSubview:lblTemp];
     [lblTemp release];
     //Initialize Label with tag 2.
@@ -519,29 +752,16 @@ bool isUsingPicker = NO;
     lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
     [cell.contentView addSubview:lblTemp];
     [lblTemp release];
-    //Initialize favorite button
-    
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.frame = CGRectMake(260, 12, delegate.checkedImage.size.width*1.5, delegate.checkedImage.size.height*2);
-    button.tag = 3;
-    [button addTarget:self action:@selector(favoritesClicked:event:) forControlEvents:UIControlEventTouchUpInside];
-    button.backgroundColor = [UIColor clearColor];
-    [cell.contentView addSubview:button];
-    //Initialize attending label
-    UIButton *attendButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    attendButton.frame = CGRectMake(260-delegate.facebookIcon.size.width*1.5, 13, delegate.facebookIcon.size.width*1.5, delegate.facebookIcon.size.height*2);
-    attendButton.backgroundColor = [UIColor clearColor];
-    attendButton.tag = 4;
-    [attendButton addTarget:self action:@selector(attendClicked:event:) forControlEvents:UIControlEventTouchUpInside];
-    [cell.contentView addSubview:attendButton];
-    
-    /*lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(200, 12, delegate.facebookIcon.size.width*2 , delegate.facebookIcon.size.height*2)];
-    lblTemp.tag = 4;
-    lblTemp.font = [UIFont boldSystemFontOfSize:12];
-    lblTemp.textColor = [UIColor colorWithRed:0.66f green:0.99f blue:0.65 alpha:1.0f];
-    [cell.contentView addSubview:lblTemp];
-    [lblTemp release];*/
-    
+    //Initialize favorite view
+    UIImageView * favoritView = [[UIImageView alloc] initWithFrame:CGRectMake(190, 27, 13, 13)];
+    favoritView.tag = 3;
+    favoritView.backgroundColor = [UIColor clearColor];
+    [cell.contentView addSubview:favoritView];
+    //Initialize attend view
+    UIImageView * attendView =[[UIImageView alloc] initWithFrame:CGRectMake(213, 27, 13, 13)];
+    attendView.tag = 4;
+    attendView.backgroundColor = [UIColor clearColor];
+    [cell.contentView addSubview:attendView];
     //Initialize color code
     lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(0 , 0, 6, CELL_ROW_HEIGHT-6)];//vet ikke hvorfor, men cell row height er ikke cell row height. Derfor minus 6 for å få fargekoden til å passe
     lblTemp.tag = 5;
@@ -590,13 +810,16 @@ bool isUsingPicker = NO;
     if (cell == nil) {
         cell = [self getCellContentView:CellIdentifier];
     }
+    //[self editGestureDeactivatedInCell:cell at:indexPath];
+    [cell setSelected:NO];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     Event *e = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
     
     // Configure the cell...
     UILabel *titleLabel = (UILabel *)[cell viewWithTag:1];
     UILabel *dateLabel = (UILabel *)[cell viewWithTag:2];
-    UIButton *button = (UIButton *)[cell viewWithTag:3];
+    UIImageView * favoriteView = (UIImageView *) [cell viewWithTag:3];
+    UIImageView * attendView = (UIImageView *) [cell viewWithTag:4];
     UILabel *colorCodeLabel = (UILabel *)[cell viewWithTag:5];
     colorCodeLabel.backgroundColor = [delegate getColorForEventCategory:e.eventType];
     
@@ -604,20 +827,25 @@ bool isUsingPicker = NO;
     dateLabel.text = [NSString stringWithFormat:@"%@ - kl.%@", e.placeString, [delegate.onlyTimeFormat stringFromDate:e.showingTime]];
     titleLabel.text = e.title;
     
+    
     if ([e.favorites intValue] > 0) {
-        [button setImage:delegate.checkedImage forState:UIControlStateNormal];
+        [favoriteView setImage:[UIImage imageNamed:@"favorite.png"]];
     }
     else {
-        [button setImage:delegate.uncheckedImage forState:UIControlStateNormal];
+        [favoriteView setImage:nil];
     }
-    if ([delegate isLoggedIn] && [delegate isInMyEvents:e.id] && [delegate isReachable]) {
-        
-        UIButton  * attendButton = (UIButton *) [cell viewWithTag:4];
-        [attendButton setImage:delegate.facebookIcon forState:UIControlStateNormal];  
+    if ([delegate isLoggedIn]  && [delegate isReachable]) {
+        [attendView setHidden:NO];
+        if ([delegate isInMyEvents:e.id]){
+            [attendView setImage:[UIImage imageNamed:@"facebook.png"]];  
+        } else {
+            [attendView setImage:nil];
+        }
     } else {
-        UIButton * attendButton = (UIButton *) [cell viewWithTag:4];
-        [attendButton setImage:delegate.uncheckedFacebookIcon forState:UIControlStateNormal];
+        [attendView setImage:nil];
+        [attendView setHidden:YES];
     }
+    
     
     return cell;
 }
@@ -629,11 +857,8 @@ bool isUsingPicker = NO;
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     NSString *s = [delegate.weekDays objectAtIndex:[[delegate.weekDayFormat stringFromDate:e.showingTime] intValue]];
     return [NSString stringWithFormat:@"%@ %@", s, [delegate.onlyDateFormat stringFromDate:e.showingTime]];
+    
 }
-
-
-
-
 
 #pragma mark - Table view delegate
 /**
@@ -641,18 +866,19 @@ bool isUsingPicker = NO;
  */
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    //if (!editAttending) {
+    UITableViewCell* swipedCell = [self.eventsTableView cellForRowAtIndexPath:indexPath];
+    if (swipedCell.accessoryType==UIAccessibilityTraitNone){
+        //[self editGestureDeactivatedInCell:swipedCell at:indexPath];
+        [swipedCell setSelected:NO];
+    } else {
+        UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
         eventDetailsViewController = [[EventDetailsViewController alloc] initWithNibName:@"EventDetailsView" bundle:nil];
         eventDetailsViewController.event = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
         [delegate.rootController pushViewController:eventDetailsViewController animated:YES];
-    /*}
-    else {
-        [eventsTableView deselectRowAtIndexPath:indexPath animated:NO];
-        [delegate flipAttendStatus:[[[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row] id]];
-        [eventsTableView reloadData];
-    }*/
+    }
 }
+
+
 
 -(void)snapToPosition:(UIScrollView *)sView
 {
@@ -705,15 +931,5 @@ bool isUsingPicker = NO;
 /**
  * Sets what view user is scrolling in
  */
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
-{
-    if (scrollView == pickerView) {
-        isUsingPicker = YES;
-        //NSLog(@"Started picker");
-    } else {
-        isUsingPicker = NO;
-        //NSLog(@"Stopped using picker");
-    }
-}
 
 @end

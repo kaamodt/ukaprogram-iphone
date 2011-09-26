@@ -26,10 +26,6 @@
 @synthesize onlyDateFormat;
 @synthesize onlyTimeFormat;
 @synthesize weekDays;
-@synthesize checkedImage;
-@synthesize uncheckedImage;
-@synthesize facebookIcon;
-@synthesize uncheckedFacebookIcon;
 @synthesize facebook;
 @synthesize formattedToken;
 @synthesize consumer;
@@ -60,6 +56,18 @@ NSNumber *flippedEventId;
     //[request release];
     [tokenParam release];
     //[fetcher release];
+}
+
+- (BOOL)appHasLaunchedBefore
+{
+    NSArray *listOfFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[[self applicationDocumentsDirectory] path] error:nil];
+ 	//register that the app has been run the first time  
+ 	for (id file in listOfFiles) {
+        if ([file isEqualToString:@"UKEprogram.sqlite"]) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
 
@@ -193,7 +201,7 @@ NSNumber *flippedEventId;
 
 - (void) requestLogin:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSASCIIStringEncoding];
-    //NSLog(@"Login recieved: %@", responseString);
+    NSLog(@"Login recieved: %@", responseString);
     [formattedToken release];
     formattedToken = [[responseString stringByReplacingOccurrencesOfString:@"\"" withString:@""] stringByReplacingOccurrencesOfString:@" " withString:@""];
     [formattedToken retain];
@@ -221,7 +229,7 @@ NSNumber *flippedEventId;
     }
     [numberFormat release];
 }
- /**
+/**
  *  Called when data is retrieved from connection, adds any new events to object context and displays only the events recieved from connection
  */
 #pragma mark NSURLConnection Delegate methods
@@ -252,15 +260,18 @@ NSNumber *flippedEventId;
 
 -(void) checkReachability
 {
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
     if (![self isReachable]) {
-        NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for å laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
+        NSString *melding = [[NSString alloc] initWithString:@"Denne appen trenger tilgang til internett for √• laste nyeste versjon av programmet. Tidligere lastet program vil bli vist."];
         [self showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
         _lostInternetMessageShown = true;
         [melding release];
     } else {
+        
         [[NSNotificationCenter defaultCenter] postNotificationName:@"startActivityIndication" object:nil];
         [self getAllEvents];
     }
+    [pool drain];
 }
 
 -(void) showAlertWithMessage:(NSString*) message andTitle:(NSString*)title{
@@ -287,15 +298,14 @@ NSNumber *flippedEventId;
     _isLoggedIntoFacebook=NO;
     weekDayFormat = [[NSDateFormatter alloc] init];
     [weekDayFormat setDateFormat:@"e"];
+    NSLocale *local = [[NSLocale alloc] initWithLocaleIdentifier:@"nb"];
+ 	[weekDayFormat setLocale:local];
+ 	[local release];
     onlyDateFormat = [[NSDateFormatter alloc] init];
     [onlyDateFormat setDateFormat:@"dd.MM"];
     onlyTimeFormat  = [[NSDateFormatter alloc] init];
     [onlyTimeFormat setDateFormat:@"HH:mm"];
-    weekDays = [[NSArray alloc] initWithObjects:@"ubrukt",@"Søndag",@"Mandag",@"Tirsdag",@"Onsdag",@"Torsdag",@"Fredag",@"Lørdag", nil];
-    checkedImage = [UIImage imageNamed:@"favorite.png"];
-    uncheckedImage = [UIImage imageNamed:@"unfavorite.png"];
-    facebookIcon = [UIImage imageNamed:@"faceIcon20x20.png"];
-    uncheckedFacebookIcon = [UIImage imageNamed:@"faceIconunchecked20x20.png"];
+    weekDays = [[NSArray alloc] initWithObjects:@"ubrukt",@"Mandag",@"Tirsdag",@"Onsdag",@"Torsdag",@"Fredag", @"L√∏rdag", @"S√∏ndag", nil];
     
     facebook = [[Facebook alloc] initWithAppId:@"219501071426021"];
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -303,11 +313,14 @@ NSNumber *flippedEventId;
         facebook.accessToken = [defaults objectForKey:@"FBAccessTokenKey"];
         facebook.expirationDate = [defaults objectForKey:@"FBExpirationDateKey"];
     }
-    //hvor kommer disse verdiene fra?
-    consumer = [[OAConsumer alloc] initWithKey:@"f0dd03cd03008bc28eb479957a2525fad84124cd" secret:@"d96b13251e446e21d396c677f3cf1e071085b8fb"];
     
+    consumer = [[OAConsumer alloc] initWithKey:@"f0dd03cd03008bc28eb479957a2525fad84124cd" secret:@"d96b13251e446e21d396c677f3cf1e071085b8fb"];    
     return YES;
 }
+
+
+
+
 
 - (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
     return [facebook handleOpenURL:url];
@@ -333,8 +346,9 @@ NSNumber *flippedEventId;
 
 - (void)changeAttendStatus:(NSString *)httpMethod eventId:(NSNumber *)eventId
 {
+    
     flippedEventId = eventId;
-    NSLog(@"%@ på event %i", httpMethod, [eventId intValue]);
+    NSLog(@"%@ p√• event %i", httpMethod, [eventId intValue]);
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://findmyapp.net/findmyapp/users/me/events/%i", [eventId intValue]]];
     OAMutableURLRequest *request = [[[OAMutableURLRequest alloc] initWithURL:url consumer:self.consumer token:nil realm:nil signatureProvider:nil] autorelease];
     [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
@@ -408,13 +422,21 @@ NSNumber *flippedEventId;
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
-    [self checkReachability];
+    if (![self appHasLaunchedBefore]) {
+        [self checkReachability];
+    }
     /*
      Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
      */
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application
+{
+        // Saves changes in the application's managed object context before the application terminates.
+    [self saveContext];
+}
+
+- (void)dealloc
 {
     [facebook release];
     [myEvents release];
@@ -424,23 +446,13 @@ NSNumber *flippedEventId;
     [onlyTimeFormat release];
     [weekDays release];
     [dateFormat release];
-    [checkedImage release];
-    [uncheckedImage release];
-    [uncheckedFacebookIcon release];
-    [facebookIcon release];
     [rootController release];
     [_window release];
     [__managedObjectContext release];
     [__managedObjectModel release];
     [__persistentStoreCoordinator release];
     [nsuc release];
-    _lostInternetMessageShown=nil;
-    // Saves changes in the application's managed object context before the application terminates.
-    [self saveContext];
-}
 
-- (void)dealloc
-{
     [super dealloc];
 }
 

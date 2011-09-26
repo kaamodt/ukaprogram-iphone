@@ -87,13 +87,13 @@
     NSLog(@"recieved: %@", responseString);
     NSArray *users = [responseString JSONValue];
     [responseString release];
-
+    UKEprogramAppDelegate * delegate = [[UIApplication sharedApplication] delegate];
     listOfFriends = [[NSMutableArray alloc] initWithCapacity:[users count]];
     for (int i = 0; i < [users count]; i++) {
-        NSDictionary *user = [users objectAtIndex:i];
-        NSString *name = [user objectForKey:@"fullName"];
-        [listOfFriends addObject:name];
-    }
+            NSDictionary *user = [users objectAtIndex:i];
+            NSString *name = [user objectForKey:@"fullName"];
+            [listOfFriends addObject:name];
+        }
     [eventDetailsViewController.friendsButton setTitle:[NSString stringWithFormat:@"%i venner skal delta", [listOfFriends count]] forState:UIControlStateNormal];
     [eventDetailsViewController.friendsButton setEnabled:YES];
     [self setTitle:[NSString stringWithFormat:@"%i venner skal delta", [listOfFriends count]]];
@@ -102,12 +102,19 @@
     
 }
 
+
+
 -(void) loadFriends:(EventDetailsViewController *) controller
 {
+    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+    
+    
+       eventDetailsViewController = controller;
+    NSLog(@"loadFriendsFerdig");
     eventDetailsViewController = controller;
     Event *event = eventDetailsViewController.event;
     //[self setTitle:[NSString stringWithFormat:@"Friends at %@", event.title]];
-    UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+    
     
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://findmyapp.net/findmyapp/events/%i/friends", [event.id intValue]]];
     OAMutableURLRequest *request = [[[OAMutableURLRequest alloc] initWithURL:url consumer:delegate.consumer token:nil realm:nil signatureProvider:nil] autorelease];
@@ -122,6 +129,10 @@
     [tokenParam release];
    
 }
+
+
+
+
 - (void)viewWillAppear:(BOOL)animated
 {
     [friendsTableView reloadData];

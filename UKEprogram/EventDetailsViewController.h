@@ -16,6 +16,7 @@
     IBOutlet UILabel *leadLabel;
     IBOutlet UILabel *textLabel;
     IBOutlet UILabel *notInUseLabel;
+    IBOutlet UILabel *titleLabel;
     IBOutlet UIImageView *eventImgView;
     IBOutlet UIScrollView *sView;
     IBOutlet UIButton *friendsButton;
@@ -29,6 +30,7 @@
 @property (retain) IBOutlet UILabel *footerLabel;
 @property (retain) IBOutlet UILabel *leadLabel;
 @property (retain) IBOutlet UILabel *textLabel;
+@property (retain) IBOutlet UILabel *titleLabel;
 @property (retain) IBOutlet UIScrollView *sView;
 @property (retain) Event *event;
 @property (retain) IBOutlet UIImageView *eventImgView;
