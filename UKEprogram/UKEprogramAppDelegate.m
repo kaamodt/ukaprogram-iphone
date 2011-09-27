@@ -82,7 +82,10 @@ NSNumber *flippedEventId;
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError: (NSError *)error {
-    //NSLog(@"DIDFAILWITHERROR");
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"stopActivityIndication" object:nil];
+ 	NSString *melding = [[NSString alloc] initWithString:@"Får ikke kontaktet FindMyApp. Vennligst prøv igjen senere."];
+ 	[self showAlertWithMessage:melding andTitle:@"Kommunikasjonsproblem!"];
+ 	[melding release];
 }
 /**
  * Request to uka backend to retrieve all events
