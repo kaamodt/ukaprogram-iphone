@@ -304,7 +304,7 @@ bool isUsingPicker = NO;
     
     
     
-    UILabel * lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(75, 30, 50, 13)];
+    UILabel * lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(75, 32, 50, 13)];
     lblTemp.tag = 1;
     lblTemp.font = [UIFont boldSystemFontOfSize:12];
     lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
@@ -320,7 +320,7 @@ bool isUsingPicker = NO;
     favoriteButton.backgroundColor = [UIColor clearColor];
     [sideSwipeView addSubview:favoriteButton];
     //Initialize attending label
-    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(175, 30, 50, 13)];
+    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(175, 32, 50, 13)];
     lblTemp.tag = 2;
     lblTemp.font = [UIFont boldSystemFontOfSize:12];
     lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
@@ -340,25 +340,15 @@ bool isUsingPicker = NO;
     
 }
 
-
-
-#define PUSH_STYLE_ANIMATION NO
 #define BOUNCE_PIXELS 5.0
 
 - (void) removeSideSwipeView:(BOOL)animated
 {
-    // Make sure we have a cell where the side swipe view appears and that we aren't in the middle of animating
     if (!sideSwipeCell || animatingSideSwipe) return;
-    
     if (animated)
     {
-        // The first step in a bounce animation is to move the side swipe view a bit offscreen
         [UIView beginAnimations:nil context:nil];
         [UIView setAnimationDuration:0.2];
-        
-        if (PUSH_STYLE_ANIMATION){
-            sideSwipeView.frame = CGRectMake(-sideSwipeView.frame.size.width + BOUNCE_PIXELS,sideSwipeView.frame.origin.y,sideSwipeView.frame.size.width, sideSwipeView.frame.size.height);
-        }
         animatingSideSwipe = YES;
         [UIView setAnimationDelegate:self];
         [UIView setAnimationDidStopSelector:@selector(animationDidStopOne:finished:context:)];
@@ -368,7 +358,6 @@ bool isUsingPicker = NO;
     {
         [sideSwipeView removeFromSuperview];
         sideSwipeCell.frame = CGRectMake(0,sideSwipeCell.frame.origin.y,sideSwipeCell.frame.size.width, sideSwipeCell.frame.size.height);
-        //[self editGestureDeactivatedInCell:self.sideSwipeCell];
         self.sideSwipeCell = nil;
     }
 }
@@ -385,18 +374,13 @@ bool isUsingPicker = NO;
             return;
         }
     }
-    
 }
 
 - (void)animationDidStopOne:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context
 {
     [UIView beginAnimations:nil context:nil];
     [UIView setAnimationDuration:0.2];
-    
-    if (PUSH_STYLE_ANIMATION)
-        sideSwipeView.frame = CGRectMake(-sideSwipeView.frame.size.width + BOUNCE_PIXELS*2,sideSwipeView.frame.origin.y,sideSwipeView.frame.size.width, sideSwipeView.frame.size.height);
     sideSwipeCell.frame = CGRectMake(BOUNCE_PIXELS*2, sideSwipeCell.frame.origin.y, sideSwipeCell.frame.size.width, sideSwipeCell.frame.size.height);
-    
     [UIView setAnimationDelegate:self];
     [UIView setAnimationDidStopSelector:@selector(animationDidStopTwo:finished:context:)];
     [UIView setAnimationCurve:UIViewAnimationCurveLinear];
@@ -409,18 +393,14 @@ bool isUsingPicker = NO;
     [UIView commitAnimations];
     [UIView beginAnimations:nil context:nil];
     [UIView setAnimationDuration:0.2];
-    
-    if (PUSH_STYLE_ANIMATION)
-        sideSwipeView.frame = CGRectMake(-sideSwipeView.frame.size.width ,sideSwipeView.frame.origin.y,sideSwipeView.frame.size.width, sideSwipeView.frame.size.height);
     sideSwipeCell.frame = CGRectMake(0, sideSwipeCell.frame.origin.y, sideSwipeCell.frame.size.width, sideSwipeCell.frame.size.height);
-    
     [UIView setAnimationDelegate:self];
     [UIView setAnimationDidStopSelector:@selector(animationDidStopThree:finished:context:)];
     [UIView setAnimationCurve:UIViewAnimationCurveLinear];
     [UIView commitAnimations];
 }
 
-// When the bounce animation is completed, remove the side swipe view and reset some state
+
 - (void)animationDidStopThree:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context
 {
     animatingSideSwipe = NO;
@@ -455,9 +435,6 @@ bool isUsingPicker = NO;
         [attendLabel setHidden:YES];
         [attendButton setEnabled:NO];
     }
-    
-    
-    //NSLog(@"view x %f and y %f", sideSwipeView.frame.origin.x, sideSwipeView.frame.origin.y);
 }
 
 
@@ -465,60 +442,33 @@ bool isUsingPicker = NO;
 {
     sideSwipeView.frame =  cell.frame;
     [self setMenyButtonsWithIndexPath:[eventsTableView indexPathForCell:cell]];  
-    // Add the side swipe view to the table below the cell
     [eventsTableView insertSubview:sideSwipeView belowSubview:cell];
-    //[eventsTableView addSubview:sideSwipeView];
-    
-    // Remember which cell the side swipe view is displayed on and the swipe direction
     self.sideSwipeCell = cell;
     CGRect cellFrame = cell.frame;
-    if (PUSH_STYLE_ANIMATION)
-    {
-        // Move the side swipe view offscreen either to the left or the right depending on the swipe direction
-        sideSwipeView.frame = CGRectMake(-cellFrame.size.width , cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
-    }
-    else
-    {
-        // Move the side swipe view to offset 0
-        sideSwipeView.frame = CGRectMake(0, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
-    }
-    // Animate in the side swipe view
+    sideSwipeView.frame = CGRectMake(0, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
     animatingSideSwipe = YES;
     [UIView beginAnimations:nil context:nil];
     [UIView setAnimationDuration:0.2];
     [UIView setAnimationDelegate:self];
     [UIView setAnimationDidStopSelector:@selector(animationDidStopAddingSwipeView:finished:context:)];
-    if (PUSH_STYLE_ANIMATION)
-    {
-        sideSwipeView.frame = CGRectMake(0, cell.frame.origin.y, cellFrame.size.width, cellFrame.size.height);
-    }
     cell.frame = CGRectMake(cellFrame.size.width, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
     [UIView commitAnimations];
 }
 
-// Called when a left swipe occurred
-
-
-
 
 -(void)didSwipe:(UIGestureRecognizer *)gestureRecognizer  {
-    NSLog(@"gesture");
-    
     if (gestureRecognizer.state == UIGestureRecognizerStateEnded) {
-        
         CGPoint swipeLocation = [gestureRecognizer locationInView:self.eventsTableView];
         NSIndexPath *swipedIndexPath = [self.eventsTableView indexPathForRowAtPoint:swipeLocation];
         UITableViewCell* swipedCell = [self.eventsTableView cellForRowAtIndexPath:swipedIndexPath];
         if (swipedCell.frame.origin.x != 0)
         {
-            //[self removeSideSwipeView:YES];
             return;
         }
-        //[self removeSideSwipeView:NO];
         if (swipedCell!= sideSwipeCell && !animatingSideSwipe)
+            [self removeSideSwipeView:NO];
             [self addSwipeViewTo:swipedCell];
     }
-    
 }
 
 - (NSIndexPath *)tableView:(UITableView *)theTableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -585,7 +535,7 @@ bool isUsingPicker = NO;
 - (void)comboClicked:(id)sender
 {
     //[filterViewController release];
-    self.filterViewController = [[FilterViewController alloc] initWithNibName:@"FilterView" bundle:nil];
+    self.filterViewController = [[[FilterViewController alloc] initWithNibName:@"FilterView" bundle:nil] autorelease];
     [self.filterViewController setEventsTableViewController:self];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [delegate.rootController presentModalViewController:filterViewController animated:YES];
@@ -596,7 +546,7 @@ bool isUsingPicker = NO;
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     BOOL isReachable = [delegate isReachable];
     if (!isReachable && delegate.isLoggedIntoFacebook && !delegate.lostInternetMessageShown) {
-        NSString * melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook!"];
+        NSString * melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook."];
         [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
         delegate.lostInternetMessageShown = true;
         delegate.isLoggedIntoFacebook = false;
@@ -677,7 +627,7 @@ bool isUsingPicker = NO;
     CGPoint currentTouchPosition = [touch locationInView:eventsTableView];
     NSIndexPath *indexPath = [eventsTableView indexPathForRowAtPoint:currentTouchPosition];
     UIButton *button = (UIButton *)[sideSwipeView viewWithTag:4];
-   
+    UILabel * attendLabel =(UILabel *) [sideSwipeView viewWithTag:2];
         if ([delegate isReachable]) {
             
             
@@ -704,13 +654,14 @@ bool isUsingPicker = NO;
                 }
             }
         } else {
-            NSString *melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook!"];
+            NSString *melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook."];
             [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
             [melding release];
             delegate.lostInternetMessageShown=true;
             delegate.isLoggedIntoFacebook = false;
             [button setHidden:YES];
             [button setEnabled:NO];
+            [attendLabel setHidden:YES];
             [self updateTable];
         }
     
@@ -757,11 +708,13 @@ bool isUsingPicker = NO;
     favoritView.tag = 3;
     favoritView.backgroundColor = [UIColor clearColor];
     [cell.contentView addSubview:favoritView];
+    [favoritView release];
     //Initialize attend view
-    UIImageView * attendView =[[UIImageView alloc] initWithFrame:CGRectMake(213, 27, 13, 13)];
+    UIImageView * attendView =[[UIImageView alloc] initWithFrame:CGRectMake(205, 27, 13, 13)];
     attendView.tag = 4;
     attendView.backgroundColor = [UIColor clearColor];
     [cell.contentView addSubview:attendView];
+    [attendView release];
     //Initialize color code
     lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(0 , 0, 6, CELL_ROW_HEIGHT-6)];//vet ikke hvorfor, men cell row height er ikke cell row height. Derfor minus 6 for å få fargekoden til å passe
     lblTemp.tag = 5;
@@ -781,7 +734,7 @@ bool isUsingPicker = NO;
     //UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 30)];
     UIImage *backImg = [UIImage imageNamed:@"tableRowHeader.png"];
     if (backImg == nil) {
-        NSLog(@"Cant find image!!!!!!!!!!");
+        //NSLog(@"Cant find image!");
     }
     [containerView setImage:backImg];
     
@@ -810,7 +763,6 @@ bool isUsingPicker = NO;
     if (cell == nil) {
         cell = [self getCellContentView:CellIdentifier];
     }
-    //[self editGestureDeactivatedInCell:cell at:indexPath];
     [cell setSelected:NO];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     Event *e = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
@@ -866,16 +818,10 @@ bool isUsingPicker = NO;
  */
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UITableViewCell* swipedCell = [self.eventsTableView cellForRowAtIndexPath:indexPath];
-    if (swipedCell.accessoryType==UIAccessibilityTraitNone){
-        //[self editGestureDeactivatedInCell:swipedCell at:indexPath];
-        [swipedCell setSelected:NO];
-    } else {
         UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
         eventDetailsViewController = [[EventDetailsViewController alloc] initWithNibName:@"EventDetailsView" bundle:nil];
         eventDetailsViewController.event = (Event *) [[[sectListOfEvents objectAtIndex:indexPath.section] objectForKey:@"Events"] objectAtIndex:indexPath.row];
         [delegate.rootController pushViewController:eventDetailsViewController animated:YES];
-    }
 }
 
 

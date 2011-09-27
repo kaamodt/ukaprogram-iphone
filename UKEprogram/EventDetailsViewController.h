@@ -17,10 +17,12 @@
     IBOutlet UILabel *textLabel;
     IBOutlet UILabel *notInUseLabel;
     IBOutlet UILabel *titleLabel;
+    IBOutlet UILabel *dateText;
     IBOutlet UIImageView *eventImgView;
     IBOutlet UIScrollView *sView;
     IBOutlet UIButton *friendsButton;
     IBOutlet UIButton *attendingButton;
+    IBOutlet UIButton *addCalender;
     UIActivityIndicatorView *loadSpinner;
     Event * event;
     FriendsTableViewController *friendsTableViewController;
@@ -31,12 +33,14 @@
 @property (retain) IBOutlet UILabel *leadLabel;
 @property (retain) IBOutlet UILabel *textLabel;
 @property (retain) IBOutlet UILabel *titleLabel;
+@property (retain) IBOutlet UILabel *dateText;
 @property (retain) IBOutlet UIScrollView *sView;
 @property (retain) Event *event;
 @property (retain) IBOutlet UIImageView *eventImgView;
 @property (retain) IBOutlet UILabel *notInUseLabel;
 @property (retain) IBOutlet UIButton *friendsButton;
 @property (retain) IBOutlet UIButton *attendingButton;
+@property (retain) IBOutlet UIButton *addCalender;
 @property (retain) UIActivityIndicatorView *loadSpinner;
 
 -(void) setLoginButtons;

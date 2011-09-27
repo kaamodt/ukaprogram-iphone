@@ -61,11 +61,17 @@
 }
 -(void)settingsClicked:(id)sender
 {
-    //[settingsViewController release];
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    self.settingsViewController = [[SettingsViewController alloc] initWithNibName:@"SettingsView" bundle:nil];
-    [delegate.rootController pushViewController:settingsViewController animated:YES];
-    
+    if ([delegate isReachable]){
+        self.settingsViewController = [[[SettingsViewController alloc] initWithNibName:@"SettingsView" bundle:nil] autorelease];
+        [delegate.rootController pushViewController:settingsViewController animated:YES];
+    } else {
+        [self setLoggedIn:NO];
+        if (!delegate.lostInternetMessageShown) {
+            [delegate showAlertWithMessage:@"Du har mistet tilgangen til internett og kan dermed ikke endre innstillingene." andTitle:@"Ingen nettilgang!"];
+            delegate.lostInternetMessageShown=true;
+        }
+    }
 }
 
 -(void)facebookLogin:(id)sender
@@ -79,7 +85,7 @@
         Facebook *facebook = delegate.facebook;
         [facebook authorize:nil delegate:self];
     } else  {
-        NSString *melding = [[NSString alloc] initWithString:@"Ingen internett tilgang. Man trenger internett for å koble på facebook!"];
+        NSString *melding = [[NSString alloc] initWithString:@"Ingen internett tilgang. Man trenger internett for å koble på facebook."];
         [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
         [melding release];
         delegate.lostInternetMessageShown=true;
@@ -184,7 +190,7 @@
     //[activityView startAnimating];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(stopActivityIndication:) name:@"stopActivityIndication" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startActivityIndication:) name:@"startActivityIndication" object:nil];
-    self.eventsTableViewController = [[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil];
+    self.eventsTableViewController = [[[EventsTableViewController alloc] initWithNibName:@"EventsTableView" bundle:nil] autorelease];
  	 if ([delegate appHasLaunchedBefore]){
         [refresh setHidden:NO];
         [loaderView setHidden:YES];
@@ -222,7 +228,7 @@
         if (![settingsButton isHidden]){
             [self setLoggedIn:NO];
             if (!(delegate.lostInternetMessageShown)){
-                NSString *melding = [[NSString alloc] initWithString:@"Du har mistet internettilgangen og ble derfor tilgangen til facebook!"];
+                NSString *melding = [[NSString alloc] initWithString:@"Du har mistet internettilgangen og ble derfor tilgangen til facebook."];
                 [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
                 delegate.lostInternetMessageShown=true;
                 [melding release];
@@ -251,11 +257,8 @@
 }
 - (void) notifyViews 
 {
-    //NSLog(@"blabla %i", [self.navigationController.viewControllers count]);
     if ([self.navigationController.viewControllers count] > 2) {
-        //EventsTableViewController *etView = (EventsTableViewController *)[self.navigationController.viewControllers objectAtIndex:1];
         EventDetailsViewController *edView = (EventDetailsViewController *)[self.navigationController.viewControllers objectAtIndex:2];
-        //[etView setLoginButtons];
         [edView setLoginButtons];
     }
 }

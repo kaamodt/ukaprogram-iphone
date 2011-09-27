@@ -102,7 +102,7 @@ NSNumber *flippedEventId;
     [eventResponseData release];
     NSArray *events = [responseString JSONValue];
     [responseString release];
-    NSLog(@"Number of events fetched: %i", [events count]);
+    //NSLog(@"Number of events fetched: %i", [events count]);
     
     NSManagedObjectContext *con = [self managedObjectContext];
     
@@ -125,12 +125,12 @@ NSNumber *flippedEventId;
         
         if (array != nil && [array count] > 0) {//object exists
             e = (Event *) [array objectAtIndex:0];
-            NSLog(@"Updating event with id: %@", id);
+            //NSLog(@"Updating event with id: %@", id);
         }
         else {//create new event
             e = (Event *)[NSEntityDescription insertNewObjectForEntityForName:@"Event" inManagedObjectContext:con];
             e.id = [numberFormat numberFromString:id];
-            NSLog(@"Creating event with id: %@", id);
+            //NSLog(@"Creating event with id: %@", id);
         }
         e.lowestPrice = [numberFormat numberFromString:[[event objectForKey:@"lowestPrice"] stringValue]];
         //e.showingTime = [dateFormat dateFromString:[event objectForKey:@"showingTime"]];
@@ -201,7 +201,8 @@ NSNumber *flippedEventId;
 
 - (void) requestLogin:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSASCIIStringEncoding];
-    NSLog(@"Login recieved: %@", responseString);
+    //NSLog(@"Login recieved: %@", responseString);
+    
     [formattedToken release];
     formattedToken = [[responseString stringByReplacingOccurrencesOfString:@"\"" withString:@""] stringByReplacingOccurrencesOfString:@" " withString:@""];
     [formattedToken retain];
@@ -236,7 +237,7 @@ NSNumber *flippedEventId;
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
     //for returning a set of events and showing these
     
-    NSLog(@"Data recieved");
+    //NSLog(@"Data recieved");
     [self fillEvents];
     [connection release];
 }
@@ -294,7 +295,7 @@ NSNumber *flippedEventId;
     // Override point for customization after application launch.
     [self.window makeKeyAndVisible];
     
-    _lostInternetMessageShown=NO;
+    _lostInternetMessageShown=YES;
     _isLoggedIntoFacebook=NO;
     weekDayFormat = [[NSDateFormatter alloc] init];
     [weekDayFormat setDateFormat:@"e"];
@@ -348,7 +349,6 @@ NSNumber *flippedEventId;
 {
     
     flippedEventId = eventId;
-    NSLog(@"%@ på event %i", httpMethod, [eventId intValue]);
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://findmyapp.net/findmyapp/users/me/events/%i", [eventId intValue]]];
     OAMutableURLRequest *request = [[[OAMutableURLRequest alloc] initWithURL:url consumer:self.consumer token:nil realm:nil signatureProvider:nil] autorelease];
     [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
@@ -376,7 +376,7 @@ NSNumber *flippedEventId;
 }
 - (void) requestAttendTicket:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSUTF8StringEncoding];
-    NSLog(@"Successfully recieved %@", responseString);
+    //NSLog(@"Successfully recieved %@", responseString);
     [responseString release];
     //NSDictionary *settings = [responseString JSONValue];
     //if ([settings objectForKey:@"success"]) {

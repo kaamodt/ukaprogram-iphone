@@ -71,32 +71,31 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    // Return YES for supported orientations
     return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
 
 - (void) requestTicket:(OAServiceTicket *)ticket didFailWithError:(NSError *)error {
-    NSLog(@"unsuccessfull finish %@", error);
     [eventDetailsViewController.friendsButton setHidden:YES];
     [eventDetailsViewController release];
 }
 
 - (void) requestTicket:(OAServiceTicket *)ticket didFinishWithData:(NSData *)data {
-    NSLog(@"Connection closed");
     NSString *responseString = [[NSString alloc] initWithData:data  encoding:NSASCIIStringEncoding];
-    NSLog(@"recieved: %@", responseString);
     NSArray *users = [responseString JSONValue];
     [responseString release];
-    UKEprogramAppDelegate * delegate = [[UIApplication sharedApplication] delegate];
     listOfFriends = [[NSMutableArray alloc] initWithCapacity:[users count]];
     for (int i = 0; i < [users count]; i++) {
             NSDictionary *user = [users objectAtIndex:i];
             NSString *name = [user objectForKey:@"fullName"];
             [listOfFriends addObject:name];
         }
-    [eventDetailsViewController.friendsButton setTitle:[NSString stringWithFormat:@"%i venner skal delta", [listOfFriends count]] forState:UIControlStateNormal];
+    NSString * friend = @"venner";
+    if ([listOfFriends count]==1){
+        friend = @"venn";
+    }
+    [eventDetailsViewController.friendsButton setTitle:[NSString stringWithFormat:@"%i %@ deltar", [listOfFriends count], friend] forState:UIControlStateNormal];
     [eventDetailsViewController.friendsButton setEnabled:YES];
-    [self setTitle:[NSString stringWithFormat:@"%i venner skal delta", [listOfFriends count]]];
+    [self setTitle:[NSString stringWithFormat:@"%i %æ skal delta", [listOfFriends count], friend]];
     [eventDetailsViewController release];
     
     
@@ -107,15 +106,8 @@
 -(void) loadFriends:(EventDetailsViewController *) controller
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    
-    
-       eventDetailsViewController = controller;
-    NSLog(@"loadFriendsFerdig");
     eventDetailsViewController = controller;
     Event *event = eventDetailsViewController.event;
-    //[self setTitle:[NSString stringWithFormat:@"Friends at %@", event.title]];
-    
-    
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://findmyapp.net/findmyapp/events/%i/friends", [event.id intValue]]];
     OAMutableURLRequest *request = [[[OAMutableURLRequest alloc] initWithURL:url consumer:delegate.consumer token:nil realm:nil signatureProvider:nil] autorelease];
     [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
@@ -124,10 +116,7 @@
     [request setParameters:params];
     OADataFetcher *fetcher = [[[OADataFetcher alloc] init] autorelease];
     [fetcher fetchDataWithRequest:request delegate:self didFinishSelector:@selector(requestTicket:didFinishWithData:) didFailSelector:@selector(requestTicket:didFailWithError:)];
-    
-    
     [tokenParam release];
-   
 }
 
 

@@ -15,6 +15,7 @@
 #import "OAuthConsumer.h"
 #import "JSON.h"
 #import "StartViewController.h"
+#import <EventKit/EventKit.h>
 
 /*IBOutlet UILabel *PlaceLabel;
  IBOutlet UILabel *DateLabel;
@@ -28,12 +29,14 @@
 @synthesize leadLabel;
 @synthesize textLabel;
 @synthesize titleLabel;
+@synthesize dateText;
 @synthesize event;
 @synthesize sView;
 @synthesize eventImgView;
 @synthesize notInUseLabel;
 @synthesize attendingButton;
 @synthesize friendsButton;
+@synthesize addCalender;
 @synthesize loadSpinner;
 NSThread* myThread;
 
@@ -48,6 +51,8 @@ NSThread* myThread;
 
 - (void)dealloc
 {
+    [dateText release];
+    
     [loadSpinner release];
     [super dealloc];
     
@@ -98,6 +103,57 @@ NSThread* myThread;
     }
 }
 
+-(NSString *)generateAgeAndPriceText{
+    NSString * ageLimit;
+    if ([event.ageLimit intValue]!=0){
+        ageLimit =  [NSString stringWithFormat:@"Aldersgrense: %@ år", event.ageLimit];
+        
+    } else {
+        ageLimit =  [NSString stringWithFormat:@"Ingen aldersgrense"];
+    }
+    NSString * pris;
+    if ([event.lowestPrice intValue]!=0){
+        pris = [NSString stringWithFormat:@"Pris: %i kr", [event.lowestPrice intValue]];
+    } else {
+        pris = [NSString stringWithFormat:@"Gratis"];
+    }
+    NSString *footerText = [ageLimit stringByAppendingString:@"  -  "];
+    footerText = [footerText stringByAppendingString:pris];
+    return footerText;
+}
+
+
+-(IBAction)addEventToCalender{
+    
+    EKEventStore *eventStore = [[[EKEventStore alloc] init] autorelease] ;
+    
+    EKEvent *calenderEvent  = [EKEvent eventWithEventStore:eventStore] ;
+    
+   /* NSPredicate * predicate =[eventStore predicateForEventsWithStartDate:event.showingTime endDate:event.showingTime calendars:nil] ;
+    NSArray * events = [eventStore eventsMatchingPredicate:predicate];
+    NSLog(@"antall events %i", [events count]);
+    for (EKEvent * oldEvent in events){
+        if ([oldEvent.title isEqualToString:event.title] && [oldEvent.startDate isEqualToDate:event.showingTime]){
+            NSLog(@"Ligger allerede inne");
+            return;
+        }
+    }*/
+    
+    calenderEvent.title     = event.title;
+    calenderEvent.startDate = [[[NSDate alloc] initWithTimeInterval:0 sinceDate:event.showingTime] autorelease];
+    calenderEvent.endDate = [[[NSDate alloc] initWithTimeInterval:0 sinceDate:calenderEvent.startDate] autorelease];
+    calenderEvent.location = event.placeString;
+    calenderEvent.notes =[NSString stringWithFormat: @"%@  -  %@", [self generateAgeAndPriceText], event.lead];
+    [calenderEvent setCalendar:[eventStore defaultCalendarForNewEvents]];
+    NSError *err;
+    [eventStore saveEvent:calenderEvent span:EKSpanThisEvent error:&err];
+    
+    if (err == noErr) {
+        UKEprogramAppDelegate * delegate = [[UIApplication sharedApplication] delegate];
+        [delegate showAlertWithMessage:@"Arrangementet har blitt lagt til i kalenderen." andTitle:@"Kalender"];
+    }
+}
+
 - (void)pushFriendsView:(id)sender
 {
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
@@ -110,7 +166,7 @@ NSThread* myThread;
     UKEprogramAppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     if (![delegate isReachable]){
         if (!(delegate.lostInternetMessageShown) && delegate.isLoggedIntoFacebook){
-            NSString *melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook!"];
+            NSString *melding = [[NSString alloc] initWithString:@"Du har mistet tilgangen til internett og derfor tilgang til facebook."];
             [delegate showAlertWithMessage:melding andTitle:@"Ingen nettilgang!"];
             delegate.lostInternetMessageShown=true;
             delegate.isLoggedIntoFacebook = false;
@@ -156,7 +212,6 @@ NSThread* myThread;
 
 
 
-
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
 /**
  * Sets the text in labels, and the size of the description and lead label
@@ -168,8 +223,12 @@ NSThread* myThread;
     [friendsButton setHidden:YES];
     [attendingButton setHidden:YES];
     
+    NSDateFormatter * onlyDayFormatter = [[NSDateFormatter alloc] init];
+    [onlyDayFormatter setDateFormat:@"dd"];
     
-    
+    //UILabel * dayLabel = [[UILabel alloc] initWithFrame:addCalender.frame];
+    dateText.text = [onlyDayFormatter stringFromDate:event.showingTime];
+    [onlyDayFormatter release];
     
     //Put the loadSpinner into the eventImgView
     loadSpinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -197,21 +256,7 @@ NSThread* myThread;
     [headerLabel setText:labelText];
     headerLabel.backgroundColor = [delegate getColorForEventCategory:event.eventType];
  	headerLabel.textColor = [UIColor darkGrayColor];
-    NSString * ageLimit;
-    if ([event.ageLimit intValue]!=0){
-        ageLimit =  [NSString stringWithFormat:@"Aldersgrense: %@ år", event.ageLimit];
-        
-    } else {
-        ageLimit =  [NSString stringWithFormat:@"Ingen aldersgrense"];
-    }
-    NSString * pris;
-    if (event.lowestPrice!=0){
-        pris = [NSString stringWithFormat:@"Pris: %i kr", [event.lowestPrice intValue]];
-    } else {
-        pris = [NSString stringWithFormat:@"Gratis"];
-    }
-    NSString *footerText = [ageLimit stringByAppendingString:@"  -  "];
-    footerText = [footerText stringByAppendingString:pris];
+    NSString *footerText = [self generateAgeAndPriceText];
     footerLabel.lineBreakMode = UILineBreakModeWordWrap; 
     footerLabel.numberOfLines = 0;
  	footerLabel.text = footerText;
