@@ -291,52 +291,53 @@ bool isUsingPicker = NO;
                                                        style:UIBarButtonItemStylePlain
                                                       target:self 
                                                       action:@selector(comboClicked:)];
-    UISwipeGestureRecognizer *gesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(didSwipe:)];
-    gesture.direction = UISwipeGestureRecognizerDirectionRight;
-    UISwipeGestureRecognizer *removeMenyGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(removeMenySwipe:)];
-    removeMenyGesture.direction = UISwipeGestureRecognizerDirectionLeft;
-    [eventsTableView addGestureRecognizer:gesture];
-    [eventsTableView addGestureRecognizer:removeMenyGesture];
-    [gesture release];
-    [removeMenyGesture release];
     
+    Class c = NSClassFromString( @"UISwipeGestureRecognizer" );
     
-    
-    
-    
-    UILabel * lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(75, 32, 50, 13)];
-    lblTemp.tag = 1;
-    lblTemp.font = [UIFont boldSystemFontOfSize:12];
-    lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
-    lblTemp.text = @"Favoritt";
-    lblTemp.textAlignment = UITextAlignmentCenter;
-    [sideSwipeView addSubview:lblTemp];
-    [lblTemp release];
-    
-    UIButton *favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    favoriteButton.frame = CGRectMake(85, 2, 50-20, 50-20);
-    favoriteButton.tag = 3;
-    [favoriteButton addTarget:self action:@selector(favoritesClicked:event:) forControlEvents:UIControlEventTouchUpInside];
-    favoriteButton.backgroundColor = [UIColor clearColor];
-    [sideSwipeView addSubview:favoriteButton];
-    //Initialize attending label
-    lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(175, 32, 50, 13)];
-    lblTemp.tag = 2;
-    lblTemp.font = [UIFont boldSystemFontOfSize:12];
-    lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
-    lblTemp.text = @"Delta";
-    lblTemp.textAlignment = UITextAlignmentCenter;
-    [sideSwipeView addSubview:lblTemp];
-    [lblTemp release];
-    UIButton *attendButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    attendButton.frame = CGRectMake(185, 2, 50-20, 50-20);
-    attendButton.backgroundColor = [UIColor clearColor];
-    attendButton.tag = 4;
-    [attendButton addTarget:self action:@selector(attendClicked:event:) forControlEvents:UIControlEventTouchUpInside];
-    [attendButton setHidden:YES];
-    [attendButton setEnabled:NO];
-    [sideSwipeView addSubview:attendButton];
-    
+    if (c) {
+        UISwipeGestureRecognizer *gesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(didSwipe:)];
+        gesture.direction = UISwipeGestureRecognizerDirectionRight;
+        UISwipeGestureRecognizer *removeMenyGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(removeMenySwipe:)];
+        removeMenyGesture.direction = UISwipeGestureRecognizerDirectionLeft;
+        [eventsTableView addGestureRecognizer:gesture];
+        [eventsTableView addGestureRecognizer:removeMenyGesture];
+        [gesture release];
+        [removeMenyGesture release];
+        UILabel * lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(75, 32, 50, 13)];
+        lblTemp.tag = 1;
+        lblTemp.font = [UIFont boldSystemFontOfSize:12];
+        lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
+        lblTemp.text = @"Favoritt";
+        lblTemp.textAlignment = UITextAlignmentCenter;
+        [sideSwipeView addSubview:lblTemp];
+        [lblTemp release];
+        UIButton *favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        favoriteButton.frame = CGRectMake(85, 2, 50-20, 50-20);
+        favoriteButton.tag = 3;
+        [favoriteButton addTarget:self action:@selector(favoritesClicked:event:) forControlEvents:UIControlEventTouchUpInside];
+        favoriteButton.backgroundColor = [UIColor clearColor];
+        [sideSwipeView addSubview:favoriteButton];
+        //Initialize attending label
+        lblTemp = [[UILabel alloc] initWithFrame:CGRectMake(175, 32, 50, 13)];
+        lblTemp.tag = 2;
+        lblTemp.font = [UIFont boldSystemFontOfSize:12];
+        lblTemp.textColor = [UIColor colorWithRed:0.6 green:0.113 blue:0.125 alpha:0.7];
+        lblTemp.text = @"Delta";
+        lblTemp.textAlignment = UITextAlignmentCenter;
+        [sideSwipeView addSubview:lblTemp];
+        [lblTemp release];
+        UIButton *attendButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        attendButton.frame = CGRectMake(185, 2, 50-20, 50-20);
+        attendButton.backgroundColor = [UIColor clearColor];
+        attendButton.tag = 4;
+        [attendButton addTarget:self action:@selector(attendClicked:event:) forControlEvents:UIControlEventTouchUpInside];
+        [attendButton setHidden:YES];
+        [attendButton setEnabled:NO];
+        [sideSwipeView addSubview:attendButton];
+    } else {
+        //if UISwipeRecognizer is not defined
+    }
+        
     
 }
 
