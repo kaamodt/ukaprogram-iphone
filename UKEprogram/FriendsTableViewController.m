@@ -95,7 +95,7 @@
     }
     [eventDetailsViewController.friendsButton setTitle:[NSString stringWithFormat:@"%i %@ deltar", [listOfFriends count], friend] forState:UIControlStateNormal];
     [eventDetailsViewController.friendsButton setEnabled:YES];
-    [self setTitle:[NSString stringWithFormat:@"%i %æ skal delta", [listOfFriends count], friend]];
+    [self setTitle:[NSString stringWithFormat:@"%i %@ skal delta", [listOfFriends count], friend]];
     [eventDetailsViewController release];
     
     
